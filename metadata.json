@@ -1,0 +1,5 @@
+{
+  "name": "BB.S3",
+  "description": "A modern, full-featured S3 and MinIO file manager.",
+  "requestFramePermissions": []
+}
