@@ -75,7 +75,10 @@ const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCrea
                 </div>
                 
                 <div className="flex items-center justify-between px-2 mb-2">
-                    <div className="section-label" style={{ margin: 0 }}>Storage Buckets</div>
+                    <div className="section-label" style={{ margin: 0 }}>
+                        Storage Buckets
+                        <span className="ml-1.5 text-[#333] font-mono">{filteredBuckets.length}{filter && filteredBuckets.length !== buckets.length ? `/${buckets.length}` : ''}</span>
+                    </div>
                     <button 
                         onClick={openCreateBucketDialog}
                         className="text-[#555] hover:text-white transition-colors p-1"

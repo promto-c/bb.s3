@@ -15,18 +15,17 @@
 
 Experience `BB.S3` live: **[Live Demo](https://promto-c.github.io/bb.s3)** (GitHub Pages)
 
-For quick testing, you may use the official public MinIO sandbox:
+> [!TIP]
+> For quick testing, you may use the official public MinIO sandbox:
+> - **Endpoint:** `https://play.min.io`
+> - **Access Key:** `minioadmin`
+> - **Secret Key:** `minioadmin`
 
-- **Endpoint:** https://play.min.io
-- **Access Key:** `minioadmin`
-- **Secret Key:** `minioadmin`
-
-⚠️ **Important**
-
-- It is a **shared, public service**; avoid uploading private or sensitive data.
-- Data may be **deleted at any time**.
-- Performance and availability are **not guaranteed**.
-- It exists for **testing/experimentation only** and is not suitable for production.
+> [!WARNING]
+> - `https://play.min.io` is a **shared, public service**; avoid uploading private or sensitive data.
+> - Data may be **deleted at any time**.
+> - Performance and availability are **not guaranteed**.
+> - It exists for **testing/experimentation only** and is not suitable for production.
 
 For any real work, point the app at your own MinIO server or AWS S3 account.
 
@@ -109,3 +108,4 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - Powered by [Vite](https://vitejs.dev)
 - Icons from [Lucide React](https://lucide.dev)
 - AWS SDK from [@aws-sdk/client-s3](https://github.com/aws/aws-sdk-js-v3)
+- Compatible with [MinIO](https://min.io) — High-performance, S3-compatible object storage

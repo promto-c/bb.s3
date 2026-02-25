@@ -313,12 +313,13 @@
             border-radius: 10px;
             padding: 0.9rem;
             position: relative;
-            transition: all 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+            transition: border-color 0.3s, box-shadow 0.3s, background 0.3s;
             overflow: hidden;
             cursor: pointer;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
+            animation: card-in 0.3s cubic-bezier(0.2, 1, 0.3, 1) backwards;
         }
         
         .list-view .file-card {
@@ -602,6 +603,72 @@
         .notification-toast {
             right: 1.5rem;
             top: 1.5rem;
+            animation: toast-in 0.3s cubic-bezier(0.2, 1, 0.3, 1) forwards;
+        }
+
+        .notification-toast.toast-exit {
+            animation: toast-out 0.25s ease-in forwards;
+        }
+
+        .notification-toast .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 2px;
+            border-radius: 0 0 0.5rem 0.5rem;
+            animation: toast-timer 3s linear forwards;
+        }
+
+        @keyframes toast-in {
+            from { opacity: 0; transform: translateX(20px) scale(0.96); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+
+        @keyframes toast-out {
+            from { opacity: 1; transform: translateX(0) scale(1); }
+            to { opacity: 0; transform: translateX(20px) scale(0.96); }
+        }
+
+        @keyframes toast-timer {
+            from { width: 100%; }
+            to { width: 0%; }
+        }
+
+        /* Loading ring */
+        .loading-ring {
+            width: 32px;
+            height: 32px;
+            position: relative;
+        }
+
+        .loading-ring div {
+            position: absolute;
+            inset: 0;
+            border: 2px solid transparent;
+            border-top-color: #555;
+            border-radius: 50%;
+            animation: ring-spin 1.2s ease-in-out infinite;
+        }
+
+        .loading-ring div:nth-child(2) {
+            inset: 4px;
+            border-top-color: #333;
+            animation-delay: 0.15s;
+        }
+
+        .loading-ring div:nth-child(3) {
+            inset: 8px;
+            border-top-color: #222;
+            animation-delay: 0.3s;
+        }
+
+        @keyframes ring-spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes card-in {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @media (max-width: 900px) {

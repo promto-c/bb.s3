@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Menu } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Menu, Undo2 } from 'lucide-react';
 import { S3Config, Bucket, S3Object } from '@/types';
 import { S3Service } from '@/services/s3Service';
 import ConnectionForm from '@/components/ConnectionForm';
@@ -19,8 +19,11 @@ const App: React.FC = () => {
   const [selectedObject, setSelectedObject] = useState<S3Object | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
-  const [notification, setNotification] = useState<{msg: string, type: 'success'|'error'} | null>(null);
+  const [notification, setNotification] = useState<{msg: string, type: 'success'|'error', exiting?: boolean, actionLabel?: string, onAction?: () => void} | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [confirmModal, setConfirmModal] = useState<{msg: string, resolve: (v: boolean) => void} | null>(null);
+
+  const pendingDeleteRef = useRef<{key: string, bucket: string, timeoutId: ReturnType<typeof setTimeout>} | null>(null);
 
   // Background animation state
   const [topoLines, setTopoLines] = useState<number[]>([]);
@@ -30,13 +33,28 @@ const App: React.FC = () => {
     setTopoLines(Array.from({ length: 15 }, (_, i) => i));
   }, []);
 
-  const showNotification = (msg: string, type: 'success'|'error') => {
-    setNotification({ msg, type });
-    setTimeout(() => setNotification(null), 3000);
+  const notifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const notifExitRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const showNotification = (msg: string, type: 'success'|'error', opts?: {actionLabel?: string, onAction?: () => void, duration?: number}) => {
+    if (notifTimerRef.current) clearTimeout(notifTimerRef.current);
+    if (notifExitRef.current) clearTimeout(notifExitRef.current);
+    const duration = opts?.duration ?? 3000;
+    setNotification({ msg, type, actionLabel: opts?.actionLabel, onAction: opts?.onAction });
+    notifTimerRef.current = setTimeout(() => {
+      setNotification(prev => prev ? { ...prev, exiting: true } : null);
+      notifExitRef.current = setTimeout(() => setNotification(null), 250);
+    }, duration);
   };
 
   const closeSidebar = () => setIsSidebarOpen(false);
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
+
+  const requestConfirm = (msg: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setConfirmModal({ msg, resolve });
+    });
+  };
 
   const handleConnect = (config: S3Config) => {
     setIsLoading(true);
@@ -74,7 +92,10 @@ const App: React.FC = () => {
     if (!s3Service) return;
     setIsLoading(true);
     try {
-      const objs = await s3Service.listObjects(bucket, prefix);
+      const objs = await s3Service.listObjects(bucket, prefix, (pageItems) => {
+        setCurrentObjects(pageItems);
+        setCurrentPrefix(prefix);
+      });
       setCurrentObjects(objs);
       setCurrentPrefix(prefix);
     } catch (err) {
@@ -87,6 +108,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (selectedBucket) {
+      setCurrentObjects([]);
+      setCurrentPrefix('');
       loadObjects(selectedBucket, '');
       setSelectedObject(null);
     }
@@ -128,7 +151,8 @@ const App: React.FC = () => {
   };
 
   const handleDeleteBucket = async (name: string) => {
-      if(!confirm(`Are you sure you want to delete ${name}?`)) return;
+      const confirmed = await requestConfirm(`Delete bucket "${name}"? All objects inside will be removed.`);
+      if (!confirmed) return;
       if (s3Service) {
           try {
               await s3Service.deleteBucket(name);
@@ -149,17 +173,29 @@ const App: React.FC = () => {
       }
   };
 
-  const handleUpload = async (file: File) => {
-      if (!s3Service || !selectedBucket) return;
-      
-      showNotification("Uploading...", "success");
-      
-      try {
-          await s3Service.uploadFile(selectedBucket, currentPrefix + file.name, file);
-          await loadObjects(selectedBucket, currentPrefix);
-          showNotification("File uploaded successfully", "success");
-      } catch (e) {
-          showNotification("Upload failed", "error");
+  const handleUpload = async (files: File[]) => {
+      if (!s3Service || !selectedBucket || files.length === 0) return;
+
+      const total = files.length;
+      let uploaded = 0;
+      let failed = 0;
+
+      for (const file of files) {
+          showNotification(`Uploading ${total > 1 ? `(${uploaded + 1}/${total}) ` : ''}${file.name}...`, 'success');
+          try {
+              await s3Service.uploadFile(selectedBucket, currentPrefix + file.name, file);
+              uploaded++;
+          } catch (e) {
+              failed++;
+          }
+      }
+
+      await loadObjects(selectedBucket, currentPrefix);
+
+      if (failed === 0) {
+          showNotification(total === 1 ? 'File uploaded' : `${uploaded} files uploaded`, 'success');
+      } else {
+          showNotification(`${uploaded} uploaded, ${failed} failed`, failed === total ? 'error' : 'success');
       }
   };
 
@@ -201,16 +237,54 @@ const App: React.FC = () => {
 
   const handleDeleteObject = async (key: string) => {
       if (!s3Service || !selectedBucket) return;
-      if(!confirm("Delete this file?")) return;
+      const confirmed = await requestConfirm(`Delete "${key.split('/').pop()}"?`);
+      if (!confirmed) return;
 
-      try {
-          await s3Service.deleteObject(selectedBucket, key);
-          await loadObjects(selectedBucket, currentPrefix);
-          if (selectedObject?.key === key) setSelectedObject(null);
-          showNotification("File deleted", "success");
-      } catch (e) {
-          showNotification("Delete failed", "error");
+      // Cancel any previous pending delete that hasn't executed yet
+      if (pendingDeleteRef.current) {
+        clearTimeout(pendingDeleteRef.current.timeoutId);
+        // Execute the previous pending delete immediately
+        const prev = pendingDeleteRef.current;
+        s3Service.deleteObject(prev.bucket, prev.key).catch(() => {});
+        pendingDeleteRef.current = null;
       }
+
+      // Optimistic: remove from UI immediately
+      setCurrentObjects(prev => prev.filter(o => o.key !== key));
+      if (selectedObject?.key === key) setSelectedObject(null);
+
+      const bucket = selectedBucket;
+      const prefix = currentPrefix;
+
+      const undoDelete = () => {
+        if (pendingDeleteRef.current?.key === key) {
+          clearTimeout(pendingDeleteRef.current.timeoutId);
+          pendingDeleteRef.current = null;
+        }
+        // Restore: reload from S3 to get accurate state
+        loadObjects(bucket, prefix);
+        showNotification('Delete undone', 'success');
+      };
+
+      // Schedule the actual S3 deletion after 5 seconds
+      const timeoutId = setTimeout(async () => {
+        pendingDeleteRef.current = null;
+        try {
+          await s3Service.deleteObject(bucket, key);
+        } catch (e) {
+          showNotification('Delete failed', 'error');
+          loadObjects(bucket, prefix);
+        }
+      }, 5000);
+
+      pendingDeleteRef.current = { key, bucket, timeoutId };
+
+      const fileName = key.split('/').filter(Boolean).pop() || key;
+      showNotification(`"${fileName}" deleted`, 'success', {
+        actionLabel: 'Undo',
+        onAction: undoDelete,
+        duration: 5000
+      });
   };
 
   if (!s3Config) {
@@ -230,11 +304,12 @@ const App: React.FC = () => {
                 })}
             </div>
             {notification && (
-                <div className={`notification-toast fixed top-6 right-6 p-4 rounded-lg shadow-2xl z-50 text-white font-medium tracking-wide animate-fade-in-down border ${notification.type === 'error' ? 'bg-red-900/50 border-red-800 text-red-100' : 'bg-green-900/50 border-green-800 text-green-100'} backdrop-blur-md`}>
+                <div className={`notification-toast${notification.exiting ? ' toast-exit' : ''} fixed top-6 right-6 p-4 rounded-lg shadow-2xl z-50 text-white font-medium tracking-wide border ${notification.type === 'error' ? 'bg-red-900/50 border-red-800 text-red-100' : 'bg-green-900/50 border-green-800 text-green-100'} backdrop-blur-md`}>
                     {notification.msg}
+                    <div className={`toast-progress ${notification.type === 'error' ? 'bg-red-500/40' : 'bg-emerald-400/40'}`}></div>
                 </div>
             )}
-            <ConnectionForm onConnect={handleConnect} />
+            <ConnectionForm onConnect={handleConnect} isConnecting={isLoading} />
         </div>
     );
   }
@@ -263,9 +338,20 @@ const App: React.FC = () => {
       
       {/* Notifications */}
       {notification && (
-        <div className={`notification-toast fixed top-6 right-6 px-6 py-3 rounded-lg shadow-2xl z-[100] font-medium flex items-center gap-3 backdrop-blur-xl border ${notification.type === 'error' ? 'bg-red-500/10 border-red-500/50 text-red-100' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-100'}`}>
+        <div className={`notification-toast${notification.exiting ? ' toast-exit' : ''} fixed top-6 right-6 px-6 py-3 rounded-lg shadow-2xl z-[100] font-medium flex items-center gap-3 backdrop-blur-xl border ${notification.type === 'error' ? 'bg-red-500/10 border-red-500/50 text-red-100' : 'bg-emerald-500/10 border-emerald-500/50 text-emerald-100'}`}>
             <div className={`w-2 h-2 rounded-full ${notification.type === 'error' ? 'bg-red-500 box-shadow-red' : 'bg-emerald-400 box-shadow-emerald'}`}></div>
             {notification.msg}
+            {notification.actionLabel && notification.onAction && (
+              <button
+                type="button"
+                onClick={() => { notification.onAction?.(); }}
+                className="ml-2 flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold bg-white/10 hover:bg-white/20 text-white transition-colors"
+              >
+                <Undo2 className="w-3 h-3" />
+                {notification.actionLabel}
+              </button>
+            )}
+            <div className={`toast-progress ${notification.type === 'error' ? 'bg-red-500/40' : 'bg-emerald-400/40'}`} style={notification.actionLabel ? { animationDuration: '5s' } : undefined}></div>
         </div>
       )}
 
@@ -283,10 +369,11 @@ const App: React.FC = () => {
       {/* Main Content */}
       <main>
         {selectedBucket ? (
-            <FileManager 
+            <FileManager
                 bucketName={selectedBucket}
                 objects={currentObjects}
                 currentPrefix={currentPrefix}
+                isLoading={isLoading}
                 onNavigate={(prefix) => loadObjects(selectedBucket, prefix)}
                 onUpload={handleUpload}
                 onCreateFolder={handleCreateFolder}
@@ -341,6 +428,32 @@ const App: React.FC = () => {
         aria-label="Close file details"
         onClick={() => setSelectedObject(null)}
       />
+
+      {/* Confirm Modal */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-[200] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-[#0a0a0a] border border-[#222] rounded-xl p-5 shadow-2xl space-y-4">
+            <p className="text-sm text-[#ccc] leading-relaxed">{confirmModal.msg}</p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                className="btn"
+                onClick={() => { confirmModal.resolve(false); setConfirmModal(null); }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                autoFocus
+                className="group flex items-center justify-center gap-2 px-4 h-8 rounded-md border border-red-500/30 bg-red-950/20 hover:bg-red-900/30 hover:border-red-500/50 text-red-400 text-xs font-semibold transition-all"
+                onClick={() => { confirmModal.resolve(true); setConfirmModal(null); }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

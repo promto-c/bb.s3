@@ -10,8 +10,9 @@ import BreadcrumbNav from '@/components/BreadcrumbNav';
 interface Props {
   objects: S3Object[];
   currentPrefix: string;
+  isLoading?: boolean;
   onNavigate: (prefix: string) => void;
-  onUpload: (file: File) => void;
+  onUpload: (files: File[]) => void;
   onCreateFolder: (path: string) => void | Promise<void>;
   onDelete: (key: string) => void;
   onSelect: (object: S3Object) => void;
@@ -22,10 +23,10 @@ interface Props {
 
 type ViewMode = 'grid' | 'list';
 
-const FileManager: React.FC<Props> = ({ 
-  objects, currentPrefix, onNavigate, onUpload, onCreateFolder, onDelete, onSelect, selectedObject, bucketName, onToggleSidebar
+const FileManager: React.FC<Props> = ({
+  objects, currentPrefix, isLoading, onNavigate, onUpload, onCreateFolder, onDelete, onSelect, selectedObject, bucketName, onToggleSidebar
 }) => {
-  const [isDragOver, setIsDragOver] = useState(false);
+  const [dragCount, setDragCount] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [newFolderPath, setNewFolderPath] = useState('');
@@ -64,15 +65,18 @@ const FileManager: React.FC<Props> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDragOver(false);
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      onUpload(e.dataTransfer.files[0]);
+    setDragCount(0);
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length > 0) {
+      onUpload(files);
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      onUpload(e.target.files[0]);
+    const files = Array.from(e.target.files || []);
+    if (files.length > 0) {
+      onUpload(files);
+      e.target.value = '';
     }
   };
 
@@ -100,18 +104,19 @@ const FileManager: React.FC<Props> = ({
   };
 
   return (
-    <div 
+    <div
       className="flex flex-col h-full relative"
       onDrop={handleDrop}
-      onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
-      onDragLeave={() => setIsDragOver(false)}
+      onDragOver={(e) => e.preventDefault()}
+      onDragEnter={(e) => { e.preventDefault(); setDragCount(c => c + 1); }}
+      onDragLeave={() => setDragCount(c => Math.max(0, c - 1))}
     >
       {/* Drag Overlay */}
-      {isDragOver && (
+      {dragCount > 0 && (
         <div className="absolute inset-4 z-50 rounded-xl border-2 border-dashed border-blue-500 bg-[#0a0a0a]/90 flex items-center justify-center backdrop-blur-sm">
           <div className="text-center">
             <Upload className="w-10 h-10 text-blue-500 mb-3 mx-auto" />
-            <span className="text-base font-medium text-white">Release to upload</span>
+            <span className="text-base font-medium text-white">Drop to upload</span>
           </div>
         </div>
       )}
@@ -149,6 +154,20 @@ const FileManager: React.FC<Props> = ({
                 currentPrefix={currentPrefix}
                 onNavigate={onNavigate}
              />
+
+             {/* Item count */}
+             {!isLoading && objects.length > 0 && (() => {
+                const folders = objects.filter(o => o.isFolder).length;
+                const files = objects.filter(o => !o.isFolder).length;
+                const parts = [];
+                if (folders) parts.push(`${folders} folder${folders !== 1 ? 's' : ''}`);
+                if (files) parts.push(`${files} file${files !== 1 ? 's' : ''}`);
+                return (
+                    <span className="text-[10px] font-mono text-[#444] whitespace-nowrap shrink-0">
+                        {parts.join(', ')}
+                    </span>
+                );
+             })()}
          </div>
 
          {/* Actions */}
@@ -168,15 +187,16 @@ const FileManager: React.FC<Props> = ({
                 </button>
             </div>
             
-            <button 
+            <button
                 onClick={() => onNavigate(currentPrefix)}
-                className="icon-btn"
+                className={`icon-btn${isLoading ? ' animate-spin' : ''}`}
                 title="Sync"
+                disabled={isLoading}
             >
                 <RefreshCw className="w-3.5 h-3.5" />
             </button>
             
-            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} />
+            <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} multiple />
             <button
                 onClick={openCreateFolderDialog}
                 className="btn"
@@ -194,12 +214,22 @@ const FileManager: React.FC<Props> = ({
       </header>
 
       {/* Content */}
-      <div className={`content-area ${viewMode === 'grid' ? 'grid-view' : 'list-view'}`}>
-            {objects.map((obj) => (
-                <div 
+      <div className={`content-area ${isLoading && objects.length === 0 ? '' : viewMode === 'grid' ? 'grid-view' : 'list-view'}`}>
+            {isLoading && objects.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[220px]">
+                    <div className="loading-ring mb-4">
+                        <div></div><div></div><div></div>
+                    </div>
+                    <p className="text-xs text-[#555] font-mono tracking-wide">Fetching objects...</p>
+                </div>
+            ) : (
+                <>
+                {objects.map((obj, idx) => (
+                <div
                     key={obj.key}
                     onClick={() => obj.isFolder ? onNavigate(obj.key) : onSelect(obj)}
                     className={`file-card ${selectedObject?.key === obj.key ? 'active' : ''}`}
+                    style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
                 >
                     <div className="flex items-center gap-3 w-full">
                         {/* Icon */}
@@ -230,6 +260,16 @@ const FileManager: React.FC<Props> = ({
                     </div>
                     <p className="text-sm">Folder is empty</p>
                 </div>
+            )}
+
+            {/* Loading more pages indicator */}
+            {isLoading && objects.length > 0 && (
+                <div className="col-span-full flex items-center justify-center gap-2 py-4 text-[#555] text-xs font-mono">
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                    <span>Loading more items...</span>
+                </div>
+            )}
+                </>
             )}
       </div>
 

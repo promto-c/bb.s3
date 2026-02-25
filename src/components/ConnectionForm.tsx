@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { S3Config, SavedConnection } from '@/types';
-import { Server, Key, Shield, Globe, Star, Trash2, Clock } from 'lucide-react';
+import { Server, Key, Shield, Globe, Star, Trash2, Clock, Loader2 } from 'lucide-react';
 
 interface Props {
   onConnect: (config: S3Config) => void;
+  isConnecting?: boolean;
 }
 
-const ConnectionForm: React.FC<Props> = ({ onConnect }) => {
+const ConnectionForm: React.FC<Props> = ({ onConnect, isConnecting }) => {
   const [config, setConfig] = useState<S3Config>({
     endpoint: 'https://play.min.io',
     accessKeyId: '',
@@ -216,9 +217,14 @@ const ConnectionForm: React.FC<Props> = ({ onConnect }) => {
 
           <button
             type="submit"
-            className="btn !mt-6 w-full bg-[#ddd] text-black font-bold hover:bg-[#eee] hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-black justify-center"
+            disabled={isConnecting}
+            className="btn !mt-6 w-full bg-[#ddd] text-black font-bold hover:bg-[#eee] hover:shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:text-black justify-center disabled:opacity-60 disabled:cursor-not-allowed"
           >
-            <Server className="w-4 h-4" /> Connect
+            {isConnecting ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Connecting...</>
+            ) : (
+              <><Server className="w-4 h-4" /> Connect</>
+            )}
           </button>
         </form>
 

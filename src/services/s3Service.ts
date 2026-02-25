@@ -101,50 +101,66 @@ export class S3Service {
     await this.client.send(new DeleteBucketCommand({ Bucket: bucketName }));
   }
 
-  async listObjects(bucketName: string, prefix: string = ''): Promise<S3Object[]> {
+  async listObjects(
+    bucketName: string,
+    prefix: string = '',
+    onPage?: (items: S3Object[]) => void
+  ): Promise<S3Object[]> {
     if (!this.client) throw new Error("Client not initialized");
 
-    const command = new ListObjectsV2Command({
-      Bucket: bucketName,
-      Prefix: prefix,
-      Delimiter: '/'
-    });
-
-    const response = await this.client.send(command);
-    
-    const folders: S3Object[] = (response.CommonPrefixes || []).map(p => ({
-      key: p.Prefix || '',
-      isFolder: true
-    }));
-
-    const objects: S3Object[] = (response.Contents || []).map(c => {
-      const key = c.Key || '';
-      return {
-        key,
-        lastModified: c.LastModified,
-        size: c.Size,
-        etag: c.ETag,
-        // Some S3-compatible providers return folder markers in Contents.
-        isFolder: key.endsWith('/')
-      };
-    }).filter(o => o.key !== prefix); // Exclude the folder object itself if it exists
-
-    // De-duplicate keys when both CommonPrefixes and Contents include the same folder marker.
     const merged = new Map<string, S3Object>();
-    folders.forEach((folder) => merged.set(folder.key, folder));
-    objects.forEach((obj) => {
-      const existing = merged.get(obj.key);
-      if (!existing) {
+    let continuationToken: string | undefined = undefined;
+
+    do {
+      const response = await this.client.send(new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: prefix,
+        Delimiter: '/',
+        ContinuationToken: continuationToken
+      }));
+
+      const folders: S3Object[] = (response.CommonPrefixes || []).map(p => ({
+        key: p.Prefix || '',
+        isFolder: true
+      }));
+
+      const objects: S3Object[] = (response.Contents || []).map(c => {
+        const key = c.Key || '';
+        return {
+          key,
+          lastModified: c.LastModified,
+          size: c.Size,
+          etag: c.ETag,
+          isFolder: key.endsWith('/')
+        };
+      }).filter(o => o.key !== prefix);
+
+      // De-duplicate keys when both CommonPrefixes and Contents include the same folder marker.
+      folders.forEach((folder) => merged.set(folder.key, folder));
+      objects.forEach((obj) => {
+        const existing = merged.get(obj.key);
+        if (!existing) {
+          merged.set(obj.key, obj);
+          return;
+        }
+        if (existing.isFolder && !obj.isFolder) {
+          return;
+        }
         merged.set(obj.key, obj);
-        return;
+      });
+
+      // Emit sorted snapshot after each page so the UI can render progressively.
+      if (onPage) {
+        const snapshot = Array.from(merged.values());
+        snapshot.sort((a, b) => {
+          if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
+          return a.key.localeCompare(b.key);
+        });
+        onPage(snapshot);
       }
 
-      if (existing.isFolder && !obj.isFolder) {
-        return;
-      }
-
-      merged.set(obj.key, obj);
-    });
+      continuationToken = response.IsTruncated ? response.NextContinuationToken : undefined;
+    } while (continuationToken);
 
     const items = Array.from(merged.values());
     items.sort((a, b) => {
