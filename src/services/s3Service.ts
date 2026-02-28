@@ -221,6 +221,30 @@ export class S3Service {
     return await getSignedUrl(this.client, command, { expiresIn: 3600 });
   }
 
+  async getFileRange(
+    bucketName: string,
+    key: string,
+    bytes: number,
+    signal?: AbortSignal
+  ): Promise<Uint8Array> {
+    if (!this.client) throw new Error("Client not initialized");
+
+    const safeByteCount = Math.max(1, Math.floor(bytes));
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Range: `bytes=0-${safeByteCount - 1}`
+    });
+
+    const response = await this.client.send(command, signal ? { abortSignal: signal } : undefined);
+    if (!response.Body) {
+      return new Uint8Array();
+    }
+
+    const arrayBuffer = await new Response(response.Body as BodyInit).arrayBuffer();
+    return new Uint8Array(arrayBuffer);
+  }
+
   async getFileContent(bucketName: string, key: string): Promise<Blob | null> {
     if (!this.client) throw new Error("Client not initialized");
 

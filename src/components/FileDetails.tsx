@@ -1,12 +1,14 @@
 import React from 'react';
 import { Calendar, Download, Expand, FileIcon, Hash, Trash2, X } from 'lucide-react';
-import { PreviewState, S3Object } from '@/types';
+import ObjectPreview from '@/components/ObjectPreview';
+import { PreviewActions, PreviewState, S3Object } from '@/types';
 
 interface Props {
   object: S3Object;
   onClose: () => void;
   onDelete: (key: string) => void;
   preview: PreviewState;
+  previewActions: PreviewActions;
   onOpenViewer: () => void;
   isViewerOpen: boolean;
 }
@@ -24,62 +26,11 @@ const FileDetails: React.FC<Props> = ({
   onClose,
   onDelete,
   preview,
+  previewActions,
   onOpenViewer,
   isViewerOpen,
 }) => {
   const objectType = object.key.split('.').pop()?.toUpperCase() || 'FILE';
-
-  const renderPreview = () => {
-    if (preview.kind === 'image' && preview.url) {
-      return <img src={preview.url} alt="Preview" className="max-w-full max-h-full object-contain relative z-10 shadow-2xl" />;
-    }
-
-    if (preview.kind === 'video' && preview.url) {
-      return (
-        <video
-          src={preview.url}
-          controls
-          playsInline
-          preload="metadata"
-          className="w-full h-full object-contain relative z-10"
-        >
-          Your browser does not support video playback.
-        </video>
-      );
-    }
-
-    if (preview.isLoading) {
-      return (
-        <div className="relative z-10 flex flex-col items-center justify-center text-center gap-3 px-4">
-          <div className="loading-ring">
-            <div></div><div></div><div></div>
-          </div>
-          <span className="text-xs text-[#666] font-mono">Loading preview...</span>
-        </div>
-      );
-    }
-
-    if (preview.error) {
-      return (
-        <div className="relative z-10 flex flex-col items-center justify-center text-center gap-2 px-4">
-          <div className="w-10 h-10 rounded-full bg-[#111] flex items-center justify-center">
-            <FileIcon className="w-5 h-5 text-[#444]" />
-          </div>
-          <span className="text-xs text-white">Preview unavailable</span>
-          <span className="text-[11px] text-[#666] font-mono max-w-[220px]">{preview.error}</span>
-        </div>
-      );
-    }
-
-    return (
-      <div className="relative z-10 flex flex-col items-center justify-center gap-2">
-        <div className="w-10 h-10 rounded-full bg-[#111] flex items-center justify-center">
-          <FileIcon className="w-5 h-5 text-[#444]" />
-        </div>
-        <span className="text-xs text-[#555] font-mono">No Preview Available</span>
-      </div>
-    );
-  };
 
   return (
     <div className="h-full flex flex-col">
@@ -109,7 +60,7 @@ const FileDetails: React.FC<Props> = ({
               Open Viewer
             </button>
           )}
-          {renderPreview()}
+          <ObjectPreview preview={preview} actions={previewActions} mode="compact" />
         </div>
 
         <div className="space-y-4">
@@ -154,9 +105,9 @@ const FileDetails: React.FC<Props> = ({
       </div>
 
       <div className="mt-4 pt-4 border-t border-[#222] flex flex-col gap-2.5 shrink-0">
-        {preview.url && (
+        {preview.downloadUrl && (
           <a
-            href={preview.url}
+            href={preview.downloadUrl}
             download
             className="group flex items-center justify-center gap-2.5 w-full h-9 rounded-md border border-[#222] bg-[#111] hover:bg-[#1a1a1a] hover:border-[#333] text-white text-[12px] font-medium transition-all duration-200 no-underline shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
           >

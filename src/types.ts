@@ -23,14 +23,51 @@ export interface S3Object {
   isFolder: boolean;
 }
 
-export type PreviewKind = 'image' | 'video' | 'unsupported';
+export type PreviewHandlerId = 'image' | 'video' | 'csv' | 'text' | 'unsupported';
+export type PreviewStatus = 'idle' | 'loading' | 'ready' | 'blocked' | 'error';
+export type PreviewBlockedReason = 'manual' | 'too-large' | 'unsupported' | null;
+export type PreviewLoadMode = 'auto' | 'manual';
+
+export interface PreviewMediaContent {
+  kind: 'media';
+  mediaType: 'image' | 'video';
+  url: string;
+}
+
+export interface PreviewTextContent {
+  kind: 'text';
+  text: string;
+  lineCount: number;
+  truncated: boolean;
+  language: string | null;
+}
+
+export interface PreviewTableContent {
+  kind: 'table';
+  columns: string[];
+  rows: string[][];
+  truncatedRows: boolean;
+  truncatedColumns: boolean;
+  rawText: string;
+  delimiter: ',' | '\t';
+}
+
+export type PreviewContent = PreviewMediaContent | PreviewTextContent | PreviewTableContent;
 
 export interface PreviewState {
-  kind: PreviewKind;
-  previewable: boolean;
-  url: string | null;
-  isLoading: boolean;
+  handlerId: PreviewHandlerId;
+  status: PreviewStatus;
+  downloadUrl: string | null;
+  content: PreviewContent | null;
+  message: string | null;
+  blockedReason: PreviewBlockedReason;
+  canManualLoad: boolean;
+  isTruncated: boolean;
   error: string | null;
+}
+
+export interface PreviewActions {
+  loadPreview?: () => void;
 }
 
 export interface Bucket {

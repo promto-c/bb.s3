@@ -1,0 +1,9 @@
+export const AUTO_PREVIEW_BYTES = 524288;
+export const MANUAL_PREVIEW_BYTES = 2097152;
+export const MAX_RENDERED_TEXT_CHARS = 200000;
+export const MAX_RENDERED_LINES = 2000;
+export const MAX_CSV_ROWS = 200;
+export const MAX_CSV_COLUMNS = 25;
+export const COMPACT_TEXT_VISIBLE_LINES = 16;
+export const COMPACT_CSV_VISIBLE_ROWS = 5;
+export const COMPACT_CSV_VISIBLE_COLUMNS = 6;

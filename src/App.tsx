@@ -44,7 +44,7 @@ const App: React.FC = () => {
   const [topoLines, setTopoLines] = useState<number[]>([]);
 
   const selectedFile = selectedObject && !selectedObject.isFolder ? selectedObject : null;
-  const previewState = useObjectPreview(selectedFile, selectedBucket, s3Service);
+  const { preview: previewState, actions: previewActions } = useObjectPreview(selectedFile, selectedBucket, s3Service);
   const inspectorOpen = Boolean(selectedFile);
   const viewerOpen = Boolean(selectedBucket && isAssetViewerOpen);
   const viewerLayout = viewerPaneWidth < STACKED_VIEWER_THRESHOLD ? 'stacked' : 'split';
@@ -510,6 +510,7 @@ const App: React.FC = () => {
                   object={selectedFile}
                   bucketName={selectedBucket}
                   preview={previewState}
+                  previewActions={previewActions}
                   isOpen={viewerOpen}
                   onClose={closeAssetViewer}
                   onDelete={handleDeleteObject}
@@ -552,6 +553,7 @@ const App: React.FC = () => {
             onClose={() => setSelectedObject(null)}
             onDelete={handleDeleteObject}
             preview={previewState}
+            previewActions={previewActions}
             onOpenViewer={() => setIsAssetViewerOpen(true)}
             isViewerOpen={viewerOpen}
           />

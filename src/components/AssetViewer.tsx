@@ -1,11 +1,13 @@
 import React, { useEffect } from 'react';
 import { Calendar, Download, FileIcon, Hash, Trash2, X } from 'lucide-react';
-import { PreviewState, S3Object } from '@/types';
+import ObjectPreview from '@/components/ObjectPreview';
+import { PreviewActions, PreviewState, S3Object } from '@/types';
 
 interface Props {
   object: S3Object | null;
   bucketName: string | null;
   preview: PreviewState;
+  previewActions: PreviewActions;
   isOpen: boolean;
   onClose: () => void;
   onDelete: (key: string) => void;
@@ -22,7 +24,7 @@ const formatSize = (bytes?: number) => {
 
 const getObjectType = (key: string) => key.split('.').pop()?.toUpperCase() || 'FILE';
 
-const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, isOpen, onClose, onDelete, layout }) => {
+const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, previewActions, isOpen, onClose, onDelete, layout }) => {
   useEffect(() => {
     if (!isOpen) return;
 
@@ -51,55 +53,7 @@ const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, isOpen, onC
       );
     }
 
-    if (preview.isLoading) {
-      return (
-        <div className="asset-viewer-empty">
-          <div className="loading-ring mb-4">
-            <div></div><div></div><div></div>
-          </div>
-          <p className="text-sm text-[#666] font-mono tracking-wide">Loading preview...</p>
-        </div>
-      );
-    }
-
-    if (preview.error) {
-      return (
-        <div className="asset-viewer-empty">
-          <div className="w-12 h-12 rounded-full bg-[#111] flex items-center justify-center mb-3">
-            <FileIcon className="w-5 h-5 text-[#555]" />
-          </div>
-          <p className="text-sm text-white">Preview unavailable</p>
-          <p className="text-xs text-[#666] font-mono mt-2 text-center max-w-sm">{preview.error}</p>
-        </div>
-      );
-    }
-
-    if (preview.kind === 'image' && preview.url) {
-      return <img src={preview.url} alt={object.key} className="asset-viewer-media image" />;
-    }
-
-    if (preview.kind === 'video' && preview.url) {
-      return (
-        <video
-          src={preview.url}
-          controls
-          playsInline
-          preload="metadata"
-          className="asset-viewer-media video"
-        >
-          Your browser does not support video playback.
-        </video>
-      );
-    }
-
-    return (
-      <div className="asset-viewer-empty">
-        <div className="w-12 h-12 rounded-full bg-[#111] flex items-center justify-center mb-3">
-          <FileIcon className="w-5 h-5 text-[#555]" />
-        </div>
-        <p className="text-sm text-white">No preview available</p>
-      </div>
-    );
+    return <ObjectPreview preview={preview} actions={previewActions} mode="full" />;
   };
 
   const objectName = object?.key.split('/').filter(Boolean).pop() || object?.key || 'No file selected';
@@ -173,9 +127,9 @@ const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, isOpen, onC
               </div>
 
               <div className="mt-auto pt-4 border-t border-[#222] flex flex-col gap-2.5 shrink-0">
-                {preview.url && (
+                {preview.downloadUrl && (
                   <a
-                    href={preview.url}
+                    href={preview.downloadUrl}
                     download
                     className="group flex items-center justify-center gap-2.5 w-full h-9 rounded-md border border-[#222] bg-[#111] hover:bg-[#1a1a1a] hover:border-[#333] text-white text-[12px] font-medium transition-all duration-200 no-underline shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
                   >
