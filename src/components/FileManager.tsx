@@ -105,7 +105,7 @@ const FileManager: React.FC<Props> = ({
 
   return (
     <div
-      className="flex flex-col h-full relative"
+      className="flex flex-col h-full relative flex-1 min-w-0"
       onDrop={handleDrop}
       onDragOver={(e) => e.preventDefault()}
       onDragEnter={(e) => { e.preventDefault(); setDragCount(c => c + 1); }}

@@ -23,6 +23,16 @@ export interface S3Object {
   isFolder: boolean;
 }
 
+export type PreviewKind = 'image' | 'video' | 'unsupported';
+
+export interface PreviewState {
+  kind: PreviewKind;
+  previewable: boolean;
+  url: string | null;
+  isLoading: boolean;
+  error: string | null;
+}
+
 export interface Bucket {
   name: string;
   creationDate?: Date;
