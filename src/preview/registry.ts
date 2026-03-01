@@ -3,6 +3,7 @@ import { PreviewHandlerId } from '@/types';
 const HANDLER_EXTENSION_ORDER: Array<[PreviewHandlerId, string[]]> = [
   ['image', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'avif']],
   ['video', ['mp4', 'mov', 'webm', 'm4v', 'ogv', 'avi', 'mkv']],
+  ['splat', ['ply', 'splat']],
   ['csv', ['csv', 'tsv']],
   ['html', ['html', 'htm']],
   ['text', ['txt', 'log', 'md', 'json', 'yaml', 'yml', 'xml', 'ini', 'conf', 'toml', 'js', 'jsx', 'ts', 'tsx', 'css', 'py', 'sh']],
@@ -54,6 +55,10 @@ export const getPreviewLanguage = (key: string): string | null => {
 
 export const isMediaHandler = (handlerId: PreviewHandlerId): handlerId is 'image' | 'video' => {
   return handlerId === 'image' || handlerId === 'video';
+};
+
+export const isSplatHandler = (handlerId: PreviewHandlerId): handlerId is 'splat' => {
+  return handlerId === 'splat';
 };
 
 export const isStructuredTextHandler = (handlerId: PreviewHandlerId): handlerId is 'csv' | 'text' | 'html' => {

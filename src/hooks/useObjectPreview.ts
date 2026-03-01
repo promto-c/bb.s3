@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { parseCsvPreview } from '@/preview/csvPreview';
 import { buildHtmlPreview } from '@/preview/htmlPreview';
-import { isMediaHandler, resolvePreviewHandler } from '@/preview/registry';
+import { isMediaHandler, isSplatHandler, resolvePreviewHandler } from '@/preview/registry';
 import { getPreviewFetchBytes, getPreviewLoadPolicy } from '@/preview/sizePolicy';
 import { buildTextPreview } from '@/preview/textPreview';
 import { S3Service } from '@/services/s3Service';
@@ -119,6 +119,48 @@ export const useObjectPreview = (
             content: {
               kind: 'media',
               mediaType: handlerId,
+              url,
+            },
+          });
+        })
+        .catch((error) => {
+          if (cancelled || isAbortError(error)) {
+            return;
+          }
+
+          const message = error instanceof Error ? error.message : 'Failed to load preview';
+          setPreview({
+            ...baseState,
+            status: 'error',
+            error: message,
+            message: 'Failed to load preview.',
+          });
+        });
+
+      return () => {
+        cancelled = true;
+        abortController.abort();
+      };
+    }
+
+    if (isSplatHandler(handlerId)) {
+      setPreview({
+        ...baseState,
+        status: 'loading',
+      });
+
+      s3Service.getFileUrl(selectedBucket, selectedObject.key)
+        .then((url) => {
+          if (cancelled) {
+            return;
+          }
+
+          setPreview({
+            ...baseState,
+            status: 'ready',
+            downloadUrl: url,
+            content: {
+              kind: 'splat',
               url,
             },
           });

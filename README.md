@@ -100,7 +100,8 @@ npm run preview
 
 ## 📄 License
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+- This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+- For a complete list of third-party dependencies and their licenses, see [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
 
 ## 🙏 Acknowledgments
 
@@ -109,5 +110,6 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - Icons from [Lucide React](https://lucide.dev)
 - AWS SDK from [@aws-sdk/client-s3](https://github.com/aws/aws-sdk-js-v3)
 - Compatible with [MinIO](https://min.io) — High-performance, S3-compatible object storage
+- 3D Gaussian Splat preview powered by [@playcanvas/supersplat-viewer](https://github.com/playcanvas/supersplat-viewer)
 
 > `BB.S3` is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Amazon Web Services or MinIO.

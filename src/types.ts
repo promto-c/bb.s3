@@ -23,7 +23,7 @@ export interface S3Object {
   isFolder: boolean;
 }
 
-export type PreviewHandlerId = 'image' | 'video' | 'csv' | 'text' | 'html' | 'unsupported';
+export type PreviewHandlerId = 'image' | 'video' | 'csv' | 'text' | 'html' | 'splat' | 'unsupported';
 export type PreviewStatus = 'idle' | 'loading' | 'ready' | 'blocked' | 'error';
 export type PreviewBlockedReason = 'manual' | 'too-large' | 'unsupported' | null;
 export type PreviewLoadMode = 'auto' | 'manual';
@@ -60,7 +60,12 @@ export interface PreviewHtmlContent {
   truncated: boolean;
 }
 
-export type PreviewContent = PreviewMediaContent | PreviewTextContent | PreviewTableContent | PreviewHtmlContent;
+export interface PreviewSplatContent {
+  kind: 'splat';
+  url: string;
+}
+
+export type PreviewContent = PreviewMediaContent | PreviewTextContent | PreviewTableContent | PreviewHtmlContent | PreviewSplatContent;
 
 export interface PreviewState {
   handlerId: PreviewHandlerId;

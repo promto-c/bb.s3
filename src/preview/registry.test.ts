@@ -5,6 +5,8 @@ describe('resolvePreviewHandler', () => {
   it('maps known extensions to their handlers', () => {
     expect(resolvePreviewHandler('folder/photo.svg')).toBe('image');
     expect(resolvePreviewHandler('folder/movie.mkv')).toBe('video');
+    expect(resolvePreviewHandler('scenes/garden.ply')).toBe('splat');
+    expect(resolvePreviewHandler('scenes/garden.splat')).toBe('splat');
     expect(resolvePreviewHandler('folder/data.csv')).toBe('csv');
     expect(resolvePreviewHandler('folder/page.html')).toBe('html');
     expect(resolvePreviewHandler('folder/page.htm')).toBe('html');

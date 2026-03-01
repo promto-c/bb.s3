@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AlertTriangle, ExternalLink, FileIcon, RefreshCw } from 'lucide-react';
 import { COMPACT_CSV_VISIBLE_COLUMNS, COMPACT_CSV_VISIBLE_ROWS, COMPACT_TEXT_VISIBLE_LINES } from '@/preview/constants';
 import { PreviewActions, PreviewState } from '@/types';
@@ -219,6 +219,70 @@ const HtmlPreview: React.FC<{
   );
 };
 
+const SplatPreview: React.FC<{
+  url: string;
+  mode: 'compact' | 'full';
+}> = ({ url, mode }) => {
+  const [srcDoc, setSrcDoc] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError(null);
+    setSrcDoc(null);
+
+    import('@/preview/splatPreview')
+      .then(({ buildSplatViewerHtml }) => buildSplatViewerHtml(url))
+      .then((html) => {
+        if (!cancelled) {
+          setSrcDoc(html);
+          setLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Failed to load viewer');
+          setLoading(false);
+        }
+      });
+
+    return () => { cancelled = true; };
+  }, [url]);
+
+  if (loading) {
+    return (
+      <div className="preview-status">
+        <div className="preview-status-icon spinning">
+          <RefreshCw className="w-5 h-5" />
+        </div>
+        <p className="preview-status-title">Loading 3D viewer...</p>
+        <p className="preview-status-copy">Preparing the Gaussian Splat renderer.</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <StatusState
+        title="Viewer unavailable"
+        message={error}
+        tone="warning"
+      />
+    );
+  }
+
+  return (
+    <iframe
+      srcDoc={srcDoc ?? undefined}
+      sandbox="allow-scripts allow-same-origin"
+      title="Gaussian Splat preview"
+      className={`preview-splat-iframe ${mode}`}
+    />
+  );
+};
+
 const StatusState: React.FC<{
   title: string;
   message: string | null;
@@ -319,6 +383,10 @@ const ObjectPreview: React.FC<Props> = ({ preview, actions, mode }) => {
           Your browser does not support video playback.
         </video>
       );
+    }
+
+    if (preview.content.kind === 'splat') {
+      return <SplatPreview url={preview.content.url} mode={mode} />;
     }
 
     if (preview.content.kind === 'html') {

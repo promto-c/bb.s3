@@ -20,7 +20,7 @@ export const getPreviewLoadPolicy = (
     };
   }
 
-  if (handlerId === 'image' || handlerId === 'video') {
+  if (handlerId === 'image' || handlerId === 'video' || handlerId === 'splat') {
     return {
       blockedReason: null,
       canManualLoad: false,

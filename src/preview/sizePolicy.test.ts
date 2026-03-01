@@ -11,6 +11,14 @@ describe('getPreviewLoadPolicy', () => {
     });
   });
 
+  it('auto-loads splat previews regardless of file size', () => {
+    expect(getPreviewLoadPolicy('splat', MANUAL_PREVIEW_BYTES + 1, false)).toEqual({
+      blockedReason: null,
+      canManualLoad: false,
+      loadMode: 'auto',
+    });
+  });
+
   it('requires manual load for mid-sized text previews', () => {
     expect(getPreviewLoadPolicy('text', AUTO_PREVIEW_BYTES + 1024, false)).toEqual({
       blockedReason: 'manual',

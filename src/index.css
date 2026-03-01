@@ -1014,6 +1014,26 @@ header {
     min-height: 200px;
 }
 
+/* -- Splat / 3D Preview ----------------------------- */
+
+.preview-splat-iframe {
+    border: 1px solid #1f1f1f;
+    border-radius: 14px;
+    background: #000;
+    width: 100%;
+}
+
+.preview-splat-iframe.compact {
+    height: 100%;
+    border-radius: 8px;
+}
+
+.preview-splat-iframe.full {
+    flex: 1;
+    min-height: 300px;
+    height: 100%;
+}
+
 .preview-html-toolbar-actions {
     display: flex;
     align-items: center;
