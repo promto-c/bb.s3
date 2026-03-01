@@ -4,7 +4,8 @@ const HANDLER_EXTENSION_ORDER: Array<[PreviewHandlerId, string[]]> = [
   ['image', ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'avif']],
   ['video', ['mp4', 'mov', 'webm', 'm4v', 'ogv', 'avi', 'mkv']],
   ['csv', ['csv', 'tsv']],
-  ['text', ['txt', 'log', 'md', 'json', 'yaml', 'yml', 'xml', 'ini', 'conf', 'toml', 'js', 'jsx', 'ts', 'tsx', 'css', 'html', 'py', 'sh']],
+  ['html', ['html', 'htm']],
+  ['text', ['txt', 'log', 'md', 'json', 'yaml', 'yml', 'xml', 'ini', 'conf', 'toml', 'js', 'jsx', 'ts', 'tsx', 'css', 'py', 'sh']],
 ];
 
 const TEXT_LANGUAGE_BY_EXTENSION = new Map<string, string>([
@@ -55,6 +56,6 @@ export const isMediaHandler = (handlerId: PreviewHandlerId): handlerId is 'image
   return handlerId === 'image' || handlerId === 'video';
 };
 
-export const isStructuredTextHandler = (handlerId: PreviewHandlerId): handlerId is 'csv' | 'text' => {
-  return handlerId === 'csv' || handlerId === 'text';
+export const isStructuredTextHandler = (handlerId: PreviewHandlerId): handlerId is 'csv' | 'text' | 'html' => {
+  return handlerId === 'csv' || handlerId === 'text' || handlerId === 'html';
 };

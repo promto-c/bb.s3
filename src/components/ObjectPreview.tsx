@@ -1,5 +1,5 @@
-import React from 'react';
-import { AlertTriangle, FileIcon, RefreshCw } from 'lucide-react';
+import React, { useState } from 'react';
+import { AlertTriangle, ExternalLink, FileIcon, RefreshCw } from 'lucide-react';
 import { COMPACT_CSV_VISIBLE_COLUMNS, COMPACT_CSV_VISIBLE_ROWS, COMPACT_TEXT_VISIBLE_LINES } from '@/preview/constants';
 import { PreviewActions, PreviewState } from '@/types';
 
@@ -111,6 +111,114 @@ const CsvPreview: React.FC<{
   );
 };
 
+const HtmlPreview: React.FC<{
+  html?: string;
+  text?: string;
+  lineCount?: number;
+  truncated?: boolean;
+  url?: string | null;
+  mode: 'compact' | 'full';
+}> = ({ html, text, lineCount, truncated, url, mode }) => {
+  const [viewMode, setViewMode] = useState<'rendered' | 'source'>('rendered');
+  const [allowScripts, setAllowScripts] = useState(false);
+  const [useFullPage, setUseFullPage] = useState(!html);
+
+  const sandboxValue = allowScripts ? 'allow-scripts' : '';
+
+  if (mode === 'compact') {
+    return (
+      <div className="preview-html-shell compact">
+        <iframe
+          sandbox=""
+          {...(useFullPage && url ? { src: url } : { srcDoc: html })}
+          title="HTML preview"
+          className="preview-html-iframe compact"
+        />
+      </div>
+    );
+  }
+
+  const showFullPageOption = url && (truncated || useFullPage);
+  const hasSource = text && typeof lineCount === 'number';
+
+  return (
+    <div className="preview-html-shell full">
+      <div className="preview-html-toolbar">
+        <div className="preview-html-view-toggle">
+          <button
+            type="button"
+            className={`preview-html-toggle-btn${viewMode === 'rendered' ? ' active' : ''}`}
+            onClick={() => setViewMode('rendered')}
+          >
+            Rendered
+          </button>
+          {hasSource && (
+            <button
+              type="button"
+              className={`preview-html-toggle-btn${viewMode === 'source' ? ' active' : ''}`}
+              onClick={() => setViewMode('source')}
+            >
+              Source
+            </button>
+          )}
+        </div>
+
+        <div className="preview-html-toolbar-actions">
+          {viewMode === 'rendered' && truncated && url && !useFullPage && (
+            <button
+              type="button"
+              className="preview-html-fullpage-btn"
+              onClick={() => setUseFullPage(true)}
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span>View Full Page</span>
+            </button>
+          )}
+
+          {viewMode === 'rendered' && useFullPage && html && (
+            <button
+              type="button"
+              className="preview-html-fullpage-btn"
+              onClick={() => setUseFullPage(false)}
+            >
+              <span>Back to Preview</span>
+            </button>
+          )}
+
+          {viewMode === 'rendered' && (
+            <label className="preview-html-scripts-toggle">
+              <input
+                type="checkbox"
+                checked={allowScripts}
+                onChange={(e) => setAllowScripts(e.target.checked)}
+              />
+              <span>Allow scripts</span>
+            </label>
+          )}
+        </div>
+      </div>
+
+      {viewMode === 'rendered' ? (
+        <iframe
+          key={`iframe-${useFullPage}-${allowScripts}`}
+          sandbox={sandboxValue}
+          {...(useFullPage && url ? { src: url } : { srcDoc: html })}
+          title="HTML preview"
+          className="preview-html-iframe full"
+        />
+      ) : hasSource ? (
+        <TextPreview
+          text={text}
+          lineCount={lineCount}
+          truncated={truncated ?? false}
+          language="html"
+          mode="full"
+        />
+      ) : null}
+    </div>
+  );
+};
+
 const StatusState: React.FC<{
   title: string;
   message: string | null;
@@ -128,6 +236,15 @@ const StatusState: React.FC<{
 );
 
 const ObjectPreview: React.FC<Props> = ({ preview, actions, mode }) => {
+  const [htmlDirectPreview, setHtmlDirectPreview] = useState(false);
+
+  const currentKey = `${preview.handlerId}:${preview.status}:${preview.downloadUrl}`;
+  const [prevKey, setPrevKey] = useState(currentKey);
+  if (currentKey !== prevKey) {
+    setPrevKey(currentKey);
+    setHtmlDirectPreview(false);
+  }
+
   if (preview.status === 'loading') {
     return (
       <div className="preview-status">
@@ -151,18 +268,36 @@ const ObjectPreview: React.FC<Props> = ({ preview, actions, mode }) => {
   }
 
   if (preview.status === 'blocked') {
+    if (htmlDirectPreview && preview.handlerId === 'html' && preview.downloadUrl) {
+      return (
+        <div className="preview-content-shell">
+          <HtmlPreview url={preview.downloadUrl} mode={mode} />
+        </div>
+      );
+    }
+
     const blockedMessage = preview.message || (preview.blockedReason ? BLOCKED_COPY[preview.blockedReason] : null);
+    const isHtml = preview.handlerId === 'html' && preview.downloadUrl;
 
     return (
       <StatusState
         title={preview.blockedReason === 'manual' ? 'Preview on demand' : 'No inline preview'}
         message={blockedMessage}
         tone={preview.blockedReason === 'unsupported' ? 'default' : 'warning'}
-        action={preview.canManualLoad && actions?.loadPreview ? (
-          <button type="button" className="btn preview-load-btn" onClick={actions.loadPreview}>
-            Load Preview
-          </button>
-        ) : null}
+        action={
+          <div className="preview-blocked-actions">
+            {preview.canManualLoad && actions?.loadPreview && (
+              <button type="button" className="btn preview-load-btn" onClick={actions.loadPreview}>
+                Load Preview
+              </button>
+            )}
+            {isHtml && (
+              <button type="button" className="btn preview-load-btn" onClick={() => setHtmlDirectPreview(true)}>
+                Preview HTML
+              </button>
+            )}
+          </div>
+        }
       />
     );
   }
@@ -183,6 +318,22 @@ const ObjectPreview: React.FC<Props> = ({ preview, actions, mode }) => {
         >
           Your browser does not support video playback.
         </video>
+      );
+    }
+
+    if (preview.content.kind === 'html') {
+      return (
+        <div className="preview-content-shell">
+          {preview.message && <div className="preview-banner">{preview.message}</div>}
+          <HtmlPreview
+            html={preview.content.html}
+            text={preview.content.text}
+            lineCount={preview.content.lineCount}
+            truncated={preview.content.truncated}
+            url={preview.downloadUrl}
+            mode={mode}
+          />
+        </div>
       );
     }
 

@@ -6,6 +6,8 @@ describe('resolvePreviewHandler', () => {
     expect(resolvePreviewHandler('folder/photo.svg')).toBe('image');
     expect(resolvePreviewHandler('folder/movie.mkv')).toBe('video');
     expect(resolvePreviewHandler('folder/data.csv')).toBe('csv');
+    expect(resolvePreviewHandler('folder/page.html')).toBe('html');
+    expect(resolvePreviewHandler('folder/page.htm')).toBe('html');
     expect(resolvePreviewHandler('folder/app.tsx')).toBe('text');
   });
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Bucket } from '@/types';
-import { Plus, Trash2, Search, Database, X, LogOut } from 'lucide-react';
+import { Plus, Trash2, Search, Database, X, LogOut, Github } from 'lucide-react';
 
 interface Props {
   buckets: Bucket[];
@@ -47,6 +47,16 @@ const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCrea
         <div className="logo">
             <div className="logo-mark"></div>
             <span>BB.S3</span>
+            <span className="badge text-[#888]">v{__APP_VERSION__}</span>
+            <a
+                href="https://github.com/promto-c/bb.s3"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="badge inline-flex items-center justify-center aspect-square p-1 text-[#888] hover:text-white transition-colors"
+                aria-label="GitHub repository"
+            >
+                <Github className="w-3 h-3" />
+            </a>
             {onClose && (
                 <button
                     type="button"

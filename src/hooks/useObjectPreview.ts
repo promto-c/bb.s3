@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { parseCsvPreview } from '@/preview/csvPreview';
+import { buildHtmlPreview } from '@/preview/htmlPreview';
 import { isMediaHandler, resolvePreviewHandler } from '@/preview/registry';
 import { getPreviewFetchBytes, getPreviewLoadPolicy } from '@/preview/sizePolicy';
 import { buildTextPreview } from '@/preview/textPreview';
@@ -196,7 +197,18 @@ export const useObjectPreview = (
 
         let nextPreview: CachedPreviewEntry;
 
-        if (handlerId === 'text') {
+        if (handlerId === 'html') {
+          const result = buildHtmlPreview(bytes, {
+            byteLimit: fetchBytes,
+            objectSize: selectedObject.size,
+          });
+
+          nextPreview = {
+            content: result.content,
+            isTruncated: result.isTruncated,
+            message: result.message,
+          };
+        } else if (handlerId === 'text') {
           const result = buildTextPreview(bytes, {
             key: selectedObject.key,
             byteLimit: fetchBytes,

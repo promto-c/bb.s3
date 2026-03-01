@@ -1,6 +1,6 @@
 <div align="center">
   <h1>BB.S3</h1>
-  <p><strong>A browser‑based S3 and MinIO file manager</strong></p>
+  <p><strong>A browser-based file manager for S3-compatible storage, including AWS S3 and MinIO</strong></p>
   <p>
     <a href="https://github.com/promto-c/bb.s3/blob/main/LICENSE">
       <img alt="License" src="https://img.shields.io/badge/license-MIT-blue.svg">
@@ -22,20 +22,20 @@ Experience `BB.S3` live: **[Live Demo](https://promto-c.github.io/bb.s3)** (GitH
 > - **Secret Key:** `minioadmin`
 
 > [!WARNING]
-> - `https://play.min.io` is a **shared, public service**; avoid uploading private or sensitive data.
+> - `https://play.min.io` is a **shared public service**; avoid uploading private or sensitive data.
 > - Data may be **deleted at any time**.
 > - Performance and availability are **not guaranteed**.
-> - It exists for **testing/experimentation only** and is not suitable for production.
+> - It exists for **testing/experimentation only** and is not suitable for production use.
 
-For any real work, point the app at your own MinIO server or AWS S3 account.
+For real work, point the app to your own MinIO server or AWS S3 account.
 
 ## ✨ Features
 
-- 📁 **Browse Buckets** — Navigate your AWS S3 or MinIO buckets with an intuitive interface
-- 🔍 **File Management** — Upload, download, and delete files with drag-and-drop support
-- 📋 **Breadcrumb Navigation** — Easy navigation through nested folders
-- 🔐 **Custom endpoints** — Connect to any HTTPS‑enabled S3 or MinIO URL by providing credentials
-- 🛡️ **Local credential handling** — All access keys and secrets stay in the browser; nothing is sent to or stored on any server
+- 📁 **Browse Buckets** — Navigate your AWS S3 or MinIO buckets with an intuitive interface.
+- 🔍 **File Management** — Upload, download, and delete files with drag-and-drop support.
+- 📋 **Breadcrumb Navigation** — Easy navigation through nested folders.
+- 🔐 **Custom Endpoints** — Connect to any HTTPS-enabled S3-compatible endpoint by providing credentials.
+- 🛡️ **Local Credential Handling** — All access keys and secrets remain in the browser; nothing is sent to or stored on any server.
 
 ## 📋 Prerequisites
 
@@ -109,3 +109,5 @@ This project is licensed under the MIT License — see the [LICENSE](LICENSE) fi
 - Icons from [Lucide React](https://lucide.dev)
 - AWS SDK from [@aws-sdk/client-s3](https://github.com/aws/aws-sdk-js-v3)
 - Compatible with [MinIO](https://min.io) — High-performance, S3-compatible object storage
+
+> `BB.S3` is an independent open-source project and is not affiliated with, endorsed by, or sponsored by Amazon Web Services or MinIO.
