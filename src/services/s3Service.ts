@@ -174,11 +174,18 @@ export class S3Service {
   async uploadFile(bucketName: string, key: string, file: File): Promise<void> {
     if (!this.client) throw new Error("Client not initialized");
 
+    // Convert File to Uint8Array so the SDK can read the body multiple times
+    // (once for request signing, once for the actual HTTP request).
+    // Passing a File/Blob directly can cause the stream to be consumed during
+    // signing, resulting in an empty body being sent.
+    const body = new Uint8Array(await file.arrayBuffer());
+
     const command = new PutObjectCommand({
       Bucket: bucketName,
       Key: key,
-      Body: file,
-      ContentType: file.type
+      Body: body,
+      ContentLength: file.size,
+      ContentType: file.type || 'application/octet-stream',
     });
 
     await this.client.send(command);

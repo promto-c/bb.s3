@@ -283,7 +283,8 @@ const App: React.FC = () => {
       try {
         await s3Service.uploadFile(selectedBucket, currentPrefix + file.name, file);
         uploaded++;
-      } catch {
+      } catch (err) {
+        console.error(`Upload failed for "${file.name}":`, err);
         failed++;
       }
     }
