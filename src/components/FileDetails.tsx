@@ -7,6 +7,7 @@ interface Props {
   object: S3Object;
   onClose: () => void;
   onDelete: (key: string) => void;
+  onDownload: (key: string) => void;
   preview: PreviewState;
   previewActions: PreviewActions;
   onOpenViewer: () => void;
@@ -25,6 +26,7 @@ const FileDetails: React.FC<Props> = ({
   object,
   onClose,
   onDelete,
+  onDownload,
   preview,
   previewActions,
   onOpenViewer,
@@ -38,28 +40,49 @@ const FileDetails: React.FC<Props> = ({
         <div className="flex items-center gap-2 text-white">
           <span className="font-bold text-sm tracking-wide uppercase">Properties</span>
         </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="p-1 hover:bg-white/5 rounded-md text-[#666] hover:text-white transition-colors"
-        >
-          <X className="w-4 h-4" />
-        </button>
+        <div className="flex items-center gap-1">
+          {!object.isFolder && (
+            <button
+              type="button"
+              onClick={() => onDownload(object.key)}
+              className="p-1.5 hover:bg-white/5 rounded-md text-[#666] hover:text-white transition-colors"
+              title="Download"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+          )}
+          {!isViewerOpen && (
+            <button
+              type="button"
+              onClick={onOpenViewer}
+              className="p-1.5 hover:bg-white/5 rounded-md text-[#666] hover:text-white transition-colors"
+              title="Open in viewer"
+            >
+              <Expand className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => onDelete(object.key)}
+            className="p-1.5 hover:bg-red-500/10 rounded-md text-[#666] hover:text-red-400 transition-colors"
+            title="Delete"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <div className="w-px h-4 bg-[#222] mx-1" />
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 hover:bg-white/5 rounded-md text-[#666] hover:text-white transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto -mr-2 pr-2">
         <div className="aspect-video bg-[#050505] border border-[#222] rounded-lg overflow-hidden flex items-center justify-center mb-4 relative group">
           <div className="absolute inset-0 bg-[radial-gradient(#ffffff05_1px,transparent_1px)] [background-size:16px_16px]"></div>
-          {!isViewerOpen && (
-            <button
-              type="button"
-              onClick={onOpenViewer}
-              className="absolute top-3 right-3 z-20 flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-semibold bg-black/60 hover:bg-black/80 text-white border border-white/10 backdrop-blur-md transition-colors"
-            >
-              <Expand className="w-3 h-3" />
-              Open Viewer
-            </button>
-          )}
           <ObjectPreview preview={preview} actions={previewActions} mode="compact" />
         </div>
 
@@ -102,27 +125,6 @@ const FileDetails: React.FC<Props> = ({
             </div>
           </div>
         </div>
-      </div>
-
-      <div className="mt-4 pt-4 border-t border-[#222] flex flex-col gap-2.5 shrink-0">
-        {preview.downloadUrl && (
-          <a
-            href={preview.downloadUrl}
-            download
-            className="group flex items-center justify-center gap-2.5 w-full h-9 rounded-md border border-[#222] bg-[#111] hover:bg-[#1a1a1a] hover:border-[#333] text-white text-[12px] font-medium transition-all duration-200 no-underline shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
-          >
-            <Download className="w-4 h-4 text-[#888] group-hover:text-white transition-colors" />
-            Download Object
-          </a>
-        )}
-        <button
-          type="button"
-          onClick={() => onDelete(object.key)}
-          className="group flex items-center justify-center gap-2.5 w-full h-9 rounded-md border border-red-500/20 bg-red-950/10 hover:bg-red-900/20 hover:border-red-500/30 text-red-500 text-[12px] font-medium transition-all duration-200"
-        >
-          <Trash2 className="w-4 h-4 opacity-75 group-hover:opacity-100 transition-opacity" />
-          Purge Object
-        </button>
       </div>
     </div>
   );

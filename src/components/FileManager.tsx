@@ -6,6 +6,7 @@ import {
   ChevronLeft, Menu, Trash2, Download, X
 } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
+import ContextMenu from '@/components/ContextMenu';
 
 interface Props {
   objects: S3Object[];
@@ -23,13 +24,14 @@ interface Props {
   onSelectionChange: (keys: Set<string>) => void;
   onBatchDelete: () => void;
   onBatchDownload: () => void;
+  onDownload: (key: string) => void;
 }
 
 type ViewMode = 'grid' | 'list';
 
 const FileManager: React.FC<Props> = ({
   objects, currentPrefix, isLoading, onNavigate, onUpload, onCreateFolder, onDelete, onSelect, selectedObject, bucketName, onToggleSidebar,
-  selectedKeys, onSelectionChange, onBatchDelete, onBatchDownload
+  selectedKeys, onSelectionChange, onBatchDelete, onBatchDownload, onDownload
 }) => {
   const [dragCount, setDragCount] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
@@ -39,6 +41,10 @@ const FileManager: React.FC<Props> = ({
   const lastClickedIndex = useRef<number | null>(null);
   const longPressRef = useRef<{ timer: ReturnType<typeof setTimeout>; fired: boolean } | null>(null);
   const isTouchRef = useRef(false);
+  const [contextMenu, setContextMenu] = useState<{
+    position: { x: number; y: number };
+    object: S3Object;
+  } | null>(null);
 
   const formatSize = (bytes?: number) => {
     if (bytes === undefined) return '-';
@@ -216,10 +222,24 @@ const FileManager: React.FC<Props> = ({
   const hasSelection = selectedKeys.size > 0;
 
   const handleContentClick = (e: React.MouseEvent) => {
+    if (contextMenu) setContextMenu(null);
     if (e.target === e.currentTarget && hasSelection) {
       onSelectionChange(new Set());
     }
   };
+
+  const handleContextOpen = (obj: S3Object) => {
+    if (obj.isFolder) {
+      onNavigate(obj.key);
+    } else {
+      onSelect(obj);
+    }
+  };
+
+  // Close context menu on navigation/data changes
+  useEffect(() => {
+    setContextMenu(null);
+  }, [currentPrefix, objects]);
 
   return (
     <div
@@ -381,7 +401,17 @@ const FileManager: React.FC<Props> = ({
                     onTouchStart={() => handleTouchStart(obj, idx)}
                     onTouchEnd={handleTouchEnd}
                     onTouchMove={handleTouchMove}
-                    onContextMenu={(e) => { if (longPressRef.current) e.preventDefault(); }}
+                    onContextMenu={(e) => {
+                      e.preventDefault();
+                      if (longPressRef.current) {
+                        clearTimeout(longPressRef.current.timer);
+                        longPressRef.current = null;
+                      }
+                      setContextMenu({
+                        position: { x: e.clientX, y: e.clientY },
+                        object: obj,
+                      });
+                    }}
                     className={`file-card${
                       selectedObject?.key === obj.key ? ' active' : ''
                     }${
@@ -470,6 +500,17 @@ const FileManager: React.FC<Props> = ({
             </div>
           </form>
         </div>
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          position={contextMenu.position}
+          object={contextMenu.object}
+          onOpen={handleContextOpen}
+          onDownload={onDownload}
+          onDelete={onDelete}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
   );

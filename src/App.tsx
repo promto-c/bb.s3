@@ -447,12 +447,16 @@ const App: React.FC = () => {
     for (const obj of filesToDownload) {
       try {
         const url = await s3Service.getFileUrl(selectedBucket, obj.key);
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url;
+        a.href = blobUrl;
         a.download = obj.key.split('/').filter(Boolean).pop() || obj.key;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+        URL.revokeObjectURL(blobUrl);
         await new Promise(r => setTimeout(r, 300));
       } catch (e) {
         console.error(`Download failed for ${obj.key}`, e);
@@ -463,6 +467,26 @@ const App: React.FC = () => {
       `${filesToDownload.length} file${filesToDownload.length !== 1 ? 's' : ''} downloaded`,
       'success'
     );
+  };
+
+  const handleSingleDownload = async (key: string) => {
+    if (!s3Service || !selectedBucket) return;
+    try {
+      const url = await s3Service.getFileUrl(selectedBucket, key);
+      const res = await fetch(url);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = key.split('/').filter(Boolean).pop() || key;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (e) {
+      console.error(`Download failed for ${key}`, e);
+      showNotification('Download failed', 'error');
+    }
   };
 
   // Escape clears multi-selection
@@ -592,6 +616,7 @@ const App: React.FC = () => {
                 onSelectionChange={handleSelectionChange}
                 onBatchDelete={handleBatchDelete}
                 onBatchDownload={handleBatchDownload}
+                onDownload={handleSingleDownload}
               />
             </div>
 
@@ -613,6 +638,7 @@ const App: React.FC = () => {
                   isOpen={viewerOpen}
                   onClose={closeAssetViewer}
                   onDelete={handleDeleteObject}
+                  onDownload={handleSingleDownload}
                   layout={viewerLayout}
                 />
               </>
@@ -651,6 +677,7 @@ const App: React.FC = () => {
             object={selectedFile}
             onClose={() => setSelectedObject(null)}
             onDelete={handleDeleteObject}
+            onDownload={handleSingleDownload}
             preview={previewState}
             previewActions={previewActions}
             onOpenViewer={() => setIsAssetViewerOpen(true)}

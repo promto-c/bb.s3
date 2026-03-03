@@ -11,6 +11,7 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   onDelete: (key: string) => void;
+  onDownload: (key: string) => void;
   layout: 'split' | 'stacked';
 }
 
@@ -24,7 +25,7 @@ const formatSize = (bytes?: number) => {
 
 const getObjectType = (key: string) => key.split('.').pop()?.toUpperCase() || 'FILE';
 
-const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, previewActions, isOpen, onClose, onDelete, layout }) => {
+const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, previewActions, isOpen, onClose, onDelete, onDownload, layout }) => {
   useEffect(() => {
     if (!isOpen) return;
 
@@ -71,14 +72,37 @@ const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, previewActi
               <div className="text-[10px] uppercase tracking-[0.24em] text-[#666] font-semibold">Asset Viewer</div>
               <div className="asset-viewer-title">{objectName}</div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="icon-btn"
-              title="Close viewer"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1 shrink-0">
+              {object && (
+                <button
+                  type="button"
+                  onClick={() => onDownload(object.key)}
+                  className="p-1.5 hover:bg-white/5 rounded-md text-[#666] hover:text-white transition-colors"
+                  title="Download"
+                >
+                  <Download className="w-4 h-4" />
+                </button>
+              )}
+              {object && (
+                <button
+                  type="button"
+                  onClick={() => onDelete(object.key)}
+                  className="p-1.5 hover:bg-red-500/10 rounded-md text-[#666] hover:text-red-400 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+              <div className="w-px h-4 bg-[#222] mx-1" />
+              <button
+                type="button"
+                onClick={onClose}
+                className="icon-btn"
+                title="Close viewer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
           <div className="asset-viewer-canvas">
@@ -124,27 +148,6 @@ const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, previewActi
                     {object.etag?.replace(/"/g, '') || 'Calculating...'}
                   </div>
                 </div>
-              </div>
-
-              <div className="mt-auto pt-4 border-t border-[#222] flex flex-col gap-2.5 shrink-0">
-                {preview.downloadUrl && (
-                  <a
-                    href={preview.downloadUrl}
-                    download
-                    className="group flex items-center justify-center gap-2.5 w-full h-9 rounded-md border border-[#222] bg-[#111] hover:bg-[#1a1a1a] hover:border-[#333] text-white text-[12px] font-medium transition-all duration-200 no-underline shadow-[0_1px_2px_rgba(0,0,0,0.5)]"
-                  >
-                    <Download className="w-4 h-4 text-[#888] group-hover:text-white transition-colors" />
-                    Download Object
-                  </a>
-                )}
-                <button
-                  type="button"
-                  onClick={() => onDelete(object.key)}
-                  className="group flex items-center justify-center gap-2.5 w-full h-9 rounded-md border border-red-500/20 bg-red-950/10 hover:bg-red-900/20 hover:border-red-500/30 text-red-500 text-[12px] font-medium transition-all duration-200"
-                >
-                  <Trash2 className="w-4 h-4 opacity-75 group-hover:opacity-100 transition-opacity" />
-                  Purge Object
-                </button>
               </div>
             </>
           ) : (

@@ -605,6 +605,128 @@ header {
     gap: 1.2rem;
 }
 
+/* File card hover actions */
+.file-card-actions {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 2px;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.15s ease, transform 0.15s ease;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.file-card:hover .file-card-actions,
+.file-card:focus-within .file-card-actions {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.list-view .file-card-actions {
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%) translateX(4px);
+}
+
+.list-view .file-card:hover .file-card-actions,
+.list-view .file-card:focus-within .file-card-actions {
+    transform: translateY(-50%) translateX(0);
+}
+
+.list-view .file-card:hover .file-meta-row {
+    opacity: 0.3;
+    transition: opacity 0.15s ease;
+}
+
+.file-card-action-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px;
+    border: 1px solid #333;
+    background: rgba(10, 10, 10, 0.9);
+    backdrop-filter: blur(8px);
+    color: #999;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.file-card-action-btn:hover {
+    color: white;
+    background: #1a1a1a;
+    border-color: #444;
+}
+
+.file-card-action-btn-danger:hover {
+    color: #f87171;
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+/* Context Menu */
+.context-menu-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 190;
+}
+
+.context-menu {
+    position: fixed;
+    z-index: 191;
+    min-width: 180px;
+    background: rgba(15, 15, 15, 0.96);
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    padding: 4px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    animation: context-menu-in 0.12s ease-out;
+}
+
+@keyframes context-menu-in {
+    from { opacity: 0; transform: scale(0.96); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.context-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.45rem 0.6rem;
+    border: none;
+    background: transparent;
+    color: #ccc;
+    font-size: 0.8rem;
+    font-weight: 500;
+    font-family: var(--sans);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.context-menu-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+}
+
+.context-menu-item-danger:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+}
+
+.context-menu-separator {
+    height: 1px;
+    background: #222;
+    margin: 4px 0.4rem;
+}
+
 @layer components {
     .badge {
         background: rgba(255,255,255,0.08);
@@ -1600,5 +1722,9 @@ header {
 
     .batch-bar {
         flex-wrap: wrap;
+    }
+
+    .file-card-actions {
+        display: none;
     }
 }
