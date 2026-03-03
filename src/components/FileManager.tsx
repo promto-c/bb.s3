@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { S3Object } from '@/types';
-import { 
-  Folder, FileImage, Upload, 
+import {
+  Folder, FileImage, Upload,
   RefreshCw, Plus, LayoutGrid, List, File, FileCode, Film, Music, FolderPlus,
-  ChevronLeft, Menu
+  ChevronLeft, Menu, Trash2, Download, X
 } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 
@@ -19,18 +19,26 @@ interface Props {
   selectedObject: S3Object | null;
   bucketName: string;
   onToggleSidebar?: () => void;
+  selectedKeys: Set<string>;
+  onSelectionChange: (keys: Set<string>) => void;
+  onBatchDelete: () => void;
+  onBatchDownload: () => void;
 }
 
 type ViewMode = 'grid' | 'list';
 
 const FileManager: React.FC<Props> = ({
-  objects, currentPrefix, isLoading, onNavigate, onUpload, onCreateFolder, onDelete, onSelect, selectedObject, bucketName, onToggleSidebar
+  objects, currentPrefix, isLoading, onNavigate, onUpload, onCreateFolder, onDelete, onSelect, selectedObject, bucketName, onToggleSidebar,
+  selectedKeys, onSelectionChange, onBatchDelete, onBatchDownload
 }) => {
   const [dragCount, setDragCount] = useState(0);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [newFolderPath, setNewFolderPath] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const lastClickedIndex = useRef<number | null>(null);
+  const longPressRef = useRef<{ timer: ReturnType<typeof setTimeout>; fired: boolean } | null>(null);
+  const isTouchRef = useRef(false);
 
   const formatSize = (bytes?: number) => {
     if (bytes === undefined) return '-';
@@ -50,16 +58,16 @@ const FileManager: React.FC<Props> = ({
   const getFileIcon = (key: string) => {
       if (key.endsWith('/')) return <Folder className="w-5 h-5 text-white" />;
       const ext = key.split('.').pop()?.toLowerCase();
-      
-      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || '')) 
+
+      if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext || ''))
         return <FileImage className="w-5 h-5 text-blue-400" />;
-      if (['mp4', 'mov', 'webm'].includes(ext || '')) 
+      if (['mp4', 'mov', 'webm'].includes(ext || ''))
         return <Film className="w-5 h-5 text-purple-400" />;
-      if (['mp3', 'wav', 'ogg'].includes(ext || '')) 
+      if (['mp3', 'wav', 'ogg'].includes(ext || ''))
         return <Music className="w-5 h-5 text-green-400" />;
-      if (['js', 'ts', 'json', 'html', 'css', 'py'].includes(ext || '')) 
+      if (['js', 'ts', 'json', 'html', 'css', 'py'].includes(ext || ''))
         return <FileCode className="w-5 h-5 text-yellow-400" />;
-      
+
       return <File className="w-5 h-5 text-gray-400" />;
   };
 
@@ -103,6 +111,116 @@ const FileManager: React.FC<Props> = ({
     setNewFolderPath('');
   };
 
+  const LONG_PRESS_MS = 500;
+
+  const handleTouchStart = (obj: S3Object, index: number) => {
+    isTouchRef.current = true;
+    longPressRef.current = {
+      timer: setTimeout(() => {
+        longPressRef.current!.fired = true;
+        const newKeys = new Set(selectedKeys);
+        newKeys.add(obj.key);
+        onSelectionChange(newKeys);
+        lastClickedIndex.current = index;
+      }, LONG_PRESS_MS),
+      fired: false,
+    };
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current.timer);
+    }
+  };
+
+  const handleTouchMove = () => {
+    if (longPressRef.current) {
+      clearTimeout(longPressRef.current.timer);
+      longPressRef.current = null;
+    }
+  };
+
+  const handleItemClick = (obj: S3Object, index: number, event: React.MouseEvent) => {
+    // Skip if long-press just fired
+    if (longPressRef.current?.fired) {
+      longPressRef.current = null;
+      return;
+    }
+    longPressRef.current = null;
+
+    const isTouch = isTouchRef.current;
+    isTouchRef.current = false;
+
+    const isModified = event.ctrlKey || event.metaKey;
+    const isShift = event.shiftKey;
+    const inSelectionMode = selectedKeys.size > 0;
+
+    // Folder navigation only when NOT in selection mode and no modifier keys
+    if (obj.isFolder && !inSelectionMode && !isModified && !isShift) {
+      onSelectionChange(new Set());
+      onNavigate(obj.key);
+      return;
+    }
+
+    if (isShift && lastClickedIndex.current !== null) {
+      // Range select
+      const start = Math.min(lastClickedIndex.current, index);
+      const end = Math.max(lastClickedIndex.current, index);
+      const newKeys = new Set(selectedKeys);
+      for (let i = start; i <= end; i++) {
+        newKeys.add(objects[i].key);
+      }
+      onSelectionChange(newKeys);
+    } else if (isModified || inSelectionMode) {
+      // Toggle individual item — Ctrl+Click or any click while in selection mode
+      const newKeys = new Set(selectedKeys);
+      if (newKeys.has(obj.key)) {
+        newKeys.delete(obj.key);
+      } else {
+        newKeys.add(obj.key);
+      }
+      onSelectionChange(newKeys);
+      lastClickedIndex.current = index;
+    } else {
+      if (isTouch) {
+        // Mobile: single tap = view only, don't enter selection
+        if (obj.isFolder) {
+          onNavigate(obj.key);
+        } else {
+          onSelect(obj);
+        }
+      } else {
+        // Desktop: single click = view only, don't enter selection mode
+        if (!obj.isFolder) {
+          onSelect(obj);
+        }
+      }
+      lastClickedIndex.current = index;
+    }
+  };
+
+  // Ctrl+A to select all
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        const active = document.activeElement;
+        if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+        onSelectionChange(new Set(objects.map(o => o.key)));
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [objects, onSelectionChange]);
+
+  const hasSelection = selectedKeys.size > 0;
+
+  const handleContentClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget && hasSelection) {
+      onSelectionChange(new Set());
+    }
+  };
+
   return (
     <div
       className="flex flex-col h-full relative flex-1 min-w-0"
@@ -136,7 +254,7 @@ const FileManager: React.FC<Props> = ({
                         <Menu className="w-4 h-4" />
                     </button>
                 )}
-                <button 
+                <button
                     onClick={navigateUp}
                     disabled={!currentPrefix}
                     title="Go Back"
@@ -148,45 +266,77 @@ const FileManager: React.FC<Props> = ({
 
              <div className="nav-divider h-5 w-px bg-[#222]"></div>
 
-             {/* Breadcrumbs */}
-             <BreadcrumbNav
-                bucketName={bucketName}
-                currentPrefix={currentPrefix}
-                onNavigate={onNavigate}
-             />
+             {hasSelection && selectedKeys.size > 1 ? (
+               /* Batch action bar replaces breadcrumbs */
+               <div className="batch-bar">
+                 <button
+                   type="button"
+                   onClick={() => onSelectionChange(new Set())}
+                   className="icon-btn batch-bar-close"
+                   title="Clear selection"
+                 >
+                   <X className="w-3.5 h-3.5" />
+                 </button>
+                 <span className="batch-bar-count">{selectedKeys.size} selected</span>
+                 <button
+                   type="button"
+                   onClick={onBatchDownload}
+                   className="btn batch-bar-btn"
+                   title="Download selected files"
+                 >
+                   <Download className="w-3.5 h-3.5" /> Download
+                 </button>
+                 <button
+                   type="button"
+                   onClick={onBatchDelete}
+                   className="batch-bar-btn-danger"
+                   title="Delete selected items"
+                 >
+                   <Trash2 className="w-3.5 h-3.5" /> Delete
+                 </button>
+               </div>
+             ) : (
+               /* Normal breadcrumbs + item count */
+               <>
+                 <BreadcrumbNav
+                    bucketName={bucketName}
+                    currentPrefix={currentPrefix}
+                    onNavigate={onNavigate}
+                 />
 
-             {/* Item count */}
-             {!isLoading && objects.length > 0 && (() => {
-                const folders = objects.filter(o => o.isFolder).length;
-                const files = objects.filter(o => !o.isFolder).length;
-                const parts = [];
-                if (folders) parts.push(`${folders} folder${folders !== 1 ? 's' : ''}`);
-                if (files) parts.push(`${files} file${files !== 1 ? 's' : ''}`);
-                return (
-                    <span className="text-[10px] font-mono text-[#444] whitespace-nowrap shrink-0">
-                        {parts.join(', ')}
-                    </span>
-                );
-             })()}
+                 {!isLoading && objects.length > 0 && (() => {
+                    const folders = objects.filter(o => o.isFolder).length;
+                    const files = objects.filter(o => !o.isFolder).length;
+                    const parts = [];
+                    if (folders) parts.push(`${folders} folder${folders !== 1 ? 's' : ''}`);
+                    if (files) parts.push(`${files} file${files !== 1 ? 's' : ''}`);
+                    return (
+                        <span className="text-[10px] font-mono text-[#444] whitespace-nowrap shrink-0">
+                            {parts.join(', ')}
+                        </span>
+                    );
+                 })()}
+               </>
+             )}
          </div>
 
          {/* Actions */}
          <div className="action-bar">
             <div className="flex bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg p-1 gap-1 mr-4">
-                <button 
+                <button
                     onClick={() => setViewMode('grid')}
                     className={`p-1 rounded-md transition-all ${viewMode === 'grid' ? 'bg-[#222] text-white' : 'text-[#555] hover:text-[#999]'}`}
                 >
                     <LayoutGrid className="w-3.5 h-3.5" />
                 </button>
-                <button 
+                <button
                     onClick={() => setViewMode('list')}
                     className={`p-1 rounded-md transition-all ${viewMode === 'list' ? 'bg-[#222] text-white' : 'text-[#555] hover:text-[#999]'}`}
                 >
                     <List className="w-3.5 h-3.5" />
                 </button>
             </div>
-            
+
             <button
                 onClick={() => onNavigate(currentPrefix)}
                 className={`icon-btn${isLoading ? ' animate-spin' : ''}`}
@@ -195,7 +345,7 @@ const FileManager: React.FC<Props> = ({
             >
                 <RefreshCw className="w-3.5 h-3.5" />
             </button>
-            
+
             <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileSelect} multiple />
             <button
                 onClick={openCreateFolderDialog}
@@ -204,7 +354,7 @@ const FileManager: React.FC<Props> = ({
             >
                 <FolderPlus className="w-3.5 h-3.5" /> New Folder
             </button>
-            <button 
+            <button
                 onClick={() => fileInputRef.current?.click()}
                 className="btn-primary"
             >
@@ -214,7 +364,7 @@ const FileManager: React.FC<Props> = ({
       </header>
 
       {/* Content */}
-      <div className={`content-area ${isLoading && objects.length === 0 ? '' : viewMode === 'grid' ? 'grid-view' : 'list-view'}`}>
+      <div className={`content-area ${isLoading && objects.length === 0 ? '' : viewMode === 'grid' ? 'grid-view' : 'list-view'}`} onClick={handleContentClick}>
             {isLoading && objects.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-[220px]">
                     <div className="loading-ring mb-4">
@@ -227,8 +377,16 @@ const FileManager: React.FC<Props> = ({
                 {objects.map((obj, idx) => (
                 <div
                     key={obj.key}
-                    onClick={() => obj.isFolder ? onNavigate(obj.key) : onSelect(obj)}
-                    className={`file-card ${selectedObject?.key === obj.key ? 'active' : ''}`}
+                    onClick={(e) => handleItemClick(obj, idx, e)}
+                    onTouchStart={() => handleTouchStart(obj, idx)}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchMove={handleTouchMove}
+                    onContextMenu={(e) => { if (longPressRef.current) e.preventDefault(); }}
+                    className={`file-card${
+                      selectedObject?.key === obj.key ? ' active' : ''
+                    }${
+                      selectedKeys.has(obj.key) ? ' selected' : ''
+                    }`}
                     style={{ animationDelay: `${Math.min(idx * 30, 300)}ms` }}
                 >
                     <div className="flex items-center gap-3 w-full">
@@ -237,7 +395,7 @@ const FileManager: React.FC<Props> = ({
                             {getFileIcon(obj.key)}
                         </div>
 
-                        {/* Name (for list view primarily, but used structure for grid too via CSS) */}
+                        {/* Name */}
                          <div className="file-info">
                             <div className="file-name">
                                 {obj.key.replace(currentPrefix, '').replace(/\/$/, '')}
@@ -252,7 +410,7 @@ const FileManager: React.FC<Props> = ({
                     </div>
                 </div>
             ))}
-            
+
             {objects.length === 0 && (
                 <div className="col-span-full flex flex-col items-center justify-center p-6 text-[#444] border border-dashed border-[#222] rounded-xl h-[220px]">
                     <div className="w-10 h-10 bg-[#111] rounded-full flex items-center justify-center mb-3">

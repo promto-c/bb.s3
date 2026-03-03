@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [currentObjects, setCurrentObjects] = useState<S3Object[]>([]);
   const [currentPrefix, setCurrentPrefix] = useState<string>('');
   const [selectedObject, setSelectedObject] = useState<S3Object | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
   const [isAssetViewerOpen, setIsAssetViewerOpen] = useState(false);
 
   const [isLoading, setIsLoading] = useState(false);
@@ -153,6 +154,7 @@ const App: React.FC = () => {
         setSelectedObject(null);
         setIsAssetViewerOpen(false);
         setIsSidebarOpen(true);
+        setSelectedKeys(new Set());
         showNotification('Connected successfully!', 'success');
       })
       .catch((err) => {
@@ -170,6 +172,7 @@ const App: React.FC = () => {
     setCurrentObjects([]);
     setCurrentPrefix('');
     setSelectedObject(null);
+    setSelectedKeys(new Set());
     setIsAssetViewerOpen(false);
     setIsSidebarOpen(false);
     setIsLoading(false);
@@ -199,6 +202,7 @@ const App: React.FC = () => {
 
     if (prefix !== currentPrefix) {
       setSelectedObject(null);
+      setSelectedKeys(new Set());
     }
 
     loadObjects(selectedBucket, prefix);
@@ -210,11 +214,13 @@ const App: React.FC = () => {
     setCurrentObjects([]);
     setCurrentPrefix('');
     setSelectedObject(null);
+    setSelectedKeys(new Set());
     loadObjects(selectedBucket, '');
   }, [selectedBucket, loadObjects]);
 
   const handleBucketSelect = (bucket: string) => {
     setSelectedObject(null);
+    setSelectedKeys(new Set());
     setSelectedBucket(bucket);
     closeSidebar();
   };
@@ -262,6 +268,7 @@ const App: React.FC = () => {
         setCurrentObjects([]);
         setCurrentPrefix('');
         setSelectedObject(null);
+        setSelectedKeys(new Set());
       }
       showNotification('Bucket deleted', 'success');
     } catch (e) {
@@ -351,6 +358,12 @@ const App: React.FC = () => {
     if (selectedObject?.key === key) {
       setSelectedObject(null);
     }
+    setSelectedKeys(prev => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
 
     const bucket = selectedBucket;
     const prefix = currentPrefix;
@@ -383,6 +396,86 @@ const App: React.FC = () => {
       duration: 5000
     });
   };
+
+  const handleSelectionChange = useCallback((keys: Set<string>) => {
+    setSelectedKeys(keys);
+    if (keys.size !== 1) {
+      setSelectedObject(null);
+    }
+  }, []);
+
+  const handleBatchDelete = async () => {
+    if (!s3Service || !selectedBucket || selectedKeys.size === 0) return;
+
+    const count = selectedKeys.size;
+    const confirmed = await requestConfirm(
+      `Delete ${count} selected item${count !== 1 ? 's' : ''}? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    const keysToDelete = Array.from(selectedKeys);
+    const bucket = selectedBucket;
+    const prefix = currentPrefix;
+
+    setCurrentObjects(prev => prev.filter(o => !selectedKeys.has(o.key)));
+    setSelectedKeys(new Set());
+    setSelectedObject(null);
+
+    try {
+      await s3Service.deleteObjects(bucket, keysToDelete);
+      showNotification(`${count} item${count !== 1 ? 's' : ''} deleted`, 'success');
+    } catch (e) {
+      console.error(e);
+      showNotification('Batch delete failed', 'error');
+      loadObjects(bucket, prefix);
+    }
+  };
+
+  const handleBatchDownload = async () => {
+    if (!s3Service || !selectedBucket || selectedKeys.size === 0) return;
+
+    const filesToDownload = currentObjects.filter(
+      o => selectedKeys.has(o.key) && !o.isFolder
+    );
+    if (filesToDownload.length === 0) {
+      showNotification('No downloadable files in selection', 'error');
+      return;
+    }
+
+    showNotification(`Preparing ${filesToDownload.length} download${filesToDownload.length !== 1 ? 's' : ''}...`, 'success');
+
+    for (const obj of filesToDownload) {
+      try {
+        const url = await s3Service.getFileUrl(selectedBucket, obj.key);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = obj.key.split('/').filter(Boolean).pop() || obj.key;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        await new Promise(r => setTimeout(r, 300));
+      } catch (e) {
+        console.error(`Download failed for ${obj.key}`, e);
+      }
+    }
+
+    showNotification(
+      `${filesToDownload.length} file${filesToDownload.length !== 1 ? 's' : ''} downloaded`,
+      'success'
+    );
+  };
+
+  // Escape clears multi-selection
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && selectedKeys.size > 0 && !confirmModal && !isAssetViewerOpen) {
+        setSelectedKeys(new Set());
+        setSelectedObject(null);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedKeys.size, confirmModal, isAssetViewerOpen]);
 
   const handleViewerResizeStart = (event: React.PointerEvent<HTMLButtonElement>) => {
     if (event.button !== 0 || !viewerOpen) return;
@@ -495,6 +588,10 @@ const App: React.FC = () => {
                 onSelect={setSelectedObject}
                 selectedObject={selectedObject}
                 onToggleSidebar={toggleSidebar}
+                selectedKeys={selectedKeys}
+                onSelectionChange={handleSelectionChange}
+                onBatchDelete={handleBatchDelete}
+                onBatchDownload={handleBatchDownload}
               />
             </div>
 

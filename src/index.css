@@ -451,6 +451,7 @@ header {
     flex-direction: column;
     justify-content: space-between;
     animation: card-in 0.3s cubic-bezier(0.2, 1, 0.3, 1) backwards;
+    user-select: none;
 }
 
 .list-view .file-card {
@@ -472,6 +473,79 @@ header {
 .file-card.active {
     border-color: var(--text-secondary);
     background: #111;
+}
+
+.file-card.selected {
+    border-color: var(--text-secondary);
+    background: #111;
+}
+
+.file-card.selected:hover {
+    background: #222;
+}
+
+/* Batch bar (header inline, replaces breadcrumbs) */
+.batch-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: fit-content;
+    background: rgba(15, 15, 15, 0.95);
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.04);
+    padding: 0.2rem;
+}
+
+.batch-bar-count {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--onyx-accent);
+    white-space: nowrap;
+    padding-right: 0.5rem;
+}
+
+.batch-bar-btn {
+    font-size: 0.75rem;
+    height: 28px;
+    padding: 0 0.6rem;
+}
+
+.batch-bar-btn-danger {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.25);
+    color: #f87171;
+    font-size: 0.75rem;
+    font-weight: 500;
+    height: 28px;
+    padding: 0 0.6rem;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.batch-bar-btn-danger:hover {
+    background: rgba(239, 68, 68, 0.15);
+    border-color: rgba(239, 68, 68, 0.4);
+}
+
+.batch-bar-close {
+    width: 26px;
+    height: 26px;
+    background: transparent;
+    border-color: transparent;
+    color: #666;
+}
+
+.batch-bar-close:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: transparent;
+    color: var(--text-primary);
 }
 
 .file-icon-box {
@@ -1522,5 +1596,9 @@ header {
         left: 1rem;
         right: 1rem !important;
         top: 0.75rem !important;
+    }
+
+    .batch-bar {
+        flex-wrap: wrap;
     }
 }

@@ -216,6 +216,23 @@ export class S3Service {
     await this.client.send(command);
   }
 
+  async deleteObjects(bucketName: string, keys: string[]): Promise<void> {
+    if (!this.client) throw new Error("Client not initialized");
+    if (keys.length === 0) return;
+
+    const BATCH_SIZE = 1000;
+    for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+      const batch = keys.slice(i, i + BATCH_SIZE);
+      await this.client.send(new DeleteObjectsCommand({
+        Bucket: bucketName,
+        Delete: {
+          Objects: batch.map(Key => ({ Key })),
+          Quiet: true,
+        },
+      }));
+    }
+  }
+
   async getFileUrl(bucketName: string, key: string): Promise<string> {
     if (!this.client) throw new Error("Client not initialized");
 
