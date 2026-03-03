@@ -299,7 +299,7 @@ const StatusState: React.FC<{
   </div>
 );
 
-const ObjectPreview: React.FC<Props> = ({ preview, actions, mode }) => {
+export const ObjectPreview: React.FC<Props> = ({ preview, actions, mode }) => {
   const [htmlDirectPreview, setHtmlDirectPreview] = useState(false);
 
   const currentKey = `${preview.handlerId}:${preview.status}:${preview.downloadUrl}`;
@@ -432,5 +432,3 @@ const ObjectPreview: React.FC<Props> = ({ preview, actions, mode }) => {
 
   return <StatusState title="No preview available" message="Select a file to load its preview here." />;
 };
-
-export default ObjectPreview;

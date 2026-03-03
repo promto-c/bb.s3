@@ -3,11 +3,7 @@ import { Menu, Undo2 } from 'lucide-react';
 import { Bucket, S3Config, S3Object } from '@/types';
 import { S3Service } from '@/services/s3Service';
 import { useObjectPreview } from '@/hooks/useObjectPreview';
-import ConnectionForm from '@/components/ConnectionForm';
-import BucketList from '@/components/BucketList';
-import FileManager from '@/components/FileManager';
-import FileDetails from '@/components/FileDetails';
-import AssetViewer from '@/components/AssetViewer';
+import { ConnectionForm, BucketList, FileManager, FileDetails, AssetViewer } from '@/components';
 
 const DEFAULT_VIEWER_WIDTH = 720;
 const MIN_VIEWER_WIDTH = 420;

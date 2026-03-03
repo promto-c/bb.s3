@@ -1,6 +1,6 @@
 import React from 'react';
 import { Calendar, Download, Expand, FileIcon, Hash, Trash2, X } from 'lucide-react';
-import ObjectPreview from '@/components/ObjectPreview';
+import { ObjectPreview } from '@/components';
 import { PreviewActions, PreviewState, S3Object } from '@/types';
 
 interface Props {
@@ -22,7 +22,7 @@ const formatSize = (bytes?: number) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-const FileDetails: React.FC<Props> = ({
+export const FileDetails: React.FC<Props> = ({
   object,
   onClose,
   onDelete,
@@ -129,5 +129,3 @@ const FileDetails: React.FC<Props> = ({
     </div>
   );
 };
-
-export default FileDetails;

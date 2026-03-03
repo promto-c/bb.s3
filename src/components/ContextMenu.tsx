@@ -12,7 +12,7 @@ interface ContextMenuProps {
   onClose: () => void;
 }
 
-const ContextMenu: React.FC<ContextMenuProps> = ({
+export const ContextMenu: React.FC<ContextMenuProps> = ({
   position,
   object,
   onOpen,
@@ -83,5 +83,3 @@ const ContextMenu: React.FC<ContextMenuProps> = ({
     document.body
   );
 };
-
-export default ContextMenu;

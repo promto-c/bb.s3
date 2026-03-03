@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Calendar, Download, FileIcon, Hash, Trash2, X } from 'lucide-react';
-import ObjectPreview from '@/components/ObjectPreview';
+import { ObjectPreview } from '@/components';
 import { PreviewActions, PreviewState, S3Object } from '@/types';
 
 interface Props {
@@ -25,7 +25,7 @@ const formatSize = (bytes?: number) => {
 
 const getObjectType = (key: string) => key.split('.').pop()?.toUpperCase() || 'FILE';
 
-const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, previewActions, isOpen, onClose, onDelete, onDownload, layout }) => {
+export const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, previewActions, isOpen, onClose, onDelete, onDownload, layout }) => {
   useEffect(() => {
     if (!isOpen) return;
 
@@ -177,5 +177,3 @@ const AssetViewer: React.FC<Props> = ({ object, bucketName, preview, previewActi
     </section>
   );
 };
-
-export default AssetViewer;

@@ -14,7 +14,7 @@ const getScrollBehavior = (): ScrollBehavior => {
   return 'smooth';
 };
 
-const BreadcrumbNav: React.FC<BreadcrumbNavProps> = ({ bucketName, currentPrefix, onNavigate }) => {
+export const BreadcrumbNav: React.FC<BreadcrumbNavProps> = ({ bucketName, currentPrefix, onNavigate }) => {
   const [showFadeLeft, setShowFadeLeft] = useState(false);
   const [showFadeRight, setShowFadeRight] = useState(false);
   const navRef = useRef<HTMLElement>(null);
@@ -128,5 +128,3 @@ const BreadcrumbNav: React.FC<BreadcrumbNavProps> = ({ bucketName, currentPrefix
     </div>
   );
 };
-
-export default BreadcrumbNav;

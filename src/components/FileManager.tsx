@@ -5,9 +5,7 @@ import {
   RefreshCw, Plus, LayoutGrid, List, File, FileCode, Film, Music, FolderPlus,
   ChevronLeft, Menu, Trash2, Download, X
 } from 'lucide-react';
-import BreadcrumbNav from '@/components/BreadcrumbNav';
-import ContextMenu from '@/components/ContextMenu';
-import PageHeader from '@/components/PageHeader';
+import { BreadcrumbNav, ContextMenu, PageHeader } from '@/components';
 
 interface Props {
   objects: S3Object[];
@@ -30,7 +28,7 @@ interface Props {
 
 type ViewMode = 'grid' | 'list';
 
-const FileManager: React.FC<Props> = ({
+export const FileManager: React.FC<Props> = ({
   objects, currentPrefix, isLoading, onNavigate, onUpload, onCreateFolder, onDelete, onSelect, selectedObject, bucketName, onToggleSidebar,
   selectedKeys, onSelectionChange, onBatchDelete, onBatchDownload, onDownload
 }) => {
@@ -529,5 +527,3 @@ const FileManager: React.FC<Props> = ({
     </div>
   );
 };
-
-export default FileManager;

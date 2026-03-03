@@ -7,7 +7,7 @@ interface Props {
   isConnecting?: boolean;
 }
 
-const ConnectionForm: React.FC<Props> = ({ onConnect, isConnecting }) => {
+export const ConnectionForm: React.FC<Props> = ({ onConnect, isConnecting }) => {
   const [config, setConfig] = useState<S3Config>({
     endpoint: 'https://play.min.io',
     accessKeyId: '',
@@ -294,5 +294,3 @@ const ConnectionForm: React.FC<Props> = ({ onConnect, isConnecting }) => {
     </div>
   );
 };
-
-export default ConnectionForm;

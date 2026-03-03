@@ -1,7 +1,7 @@
 import React from 'react';
 import { Bucket } from '@/types';
 import { Plus, Trash2, Database, X, Power, Github } from 'lucide-react';
-import ExpandableSearch from './ExpandableSearch';
+import { ExpandableSearch } from '@/components';
 
 interface Props {
   buckets: Bucket[];
@@ -14,7 +14,7 @@ interface Props {
   endpoint?: string;
 }
 
-const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCreate, onDelete, onClose, onDisconnect, endpoint }) => {
+export const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCreate, onDelete, onClose, onDisconnect, endpoint }) => {
   const [filter, setFilter] = React.useState('');
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [isCreateBucketOpen, setIsCreateBucketOpen] = React.useState(false);
@@ -178,5 +178,3 @@ const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCrea
     </aside>
   );
 };
-
-export default BucketList;

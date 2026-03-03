@@ -9,7 +9,7 @@ interface ExpandableSearchProps {
   onOpenChange?: (isOpen: boolean) => void;
 }
 
-const ExpandableSearch: React.FC<ExpandableSearchProps> = ({ value, onChange, placeholder = 'Search...', title = 'Search', onOpenChange }) => {
+export const ExpandableSearch: React.FC<ExpandableSearchProps> = ({ value, onChange, placeholder = 'Search...', title = 'Search', onOpenChange }) => {
   const [isOpen, setIsOpen] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
 
@@ -53,5 +53,3 @@ const ExpandableSearch: React.FC<ExpandableSearchProps> = ({ value, onChange, pl
     </>
   );
 };
-
-export default ExpandableSearch;
