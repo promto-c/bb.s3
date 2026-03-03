@@ -99,7 +99,7 @@ aside {
     font-weight: 800;
     font-size: 1rem;
     letter-spacing: -0.02em;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
     gap: 6px;
@@ -131,6 +131,68 @@ aside {
     height: 18px;
     background: var(--text-primary);
     clip-path: polygon(50% 0%, 100% 100%, 0% 100%);
+}
+
+.connection-chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 8px;
+    margin-bottom: 1rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid transparent;
+    transition: all 0.2s ease;
+    min-width: 0;
+}
+
+.connection-chip:hover {
+    border-color: #222;
+    background: rgba(255,255,255,0.03);
+}
+
+.connection-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+    box-shadow: 0 0 6px rgba(34,197,94,0.4);
+}
+
+.connection-chip-label {
+    font-size: 0.65rem;
+    color: #666;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.connection-chip-disconnect {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    color: #444;
+    opacity: 0;
+    transition: all 0.2s ease;
+    margin-left: auto;
+}
+
+.connection-chip:hover .connection-chip-disconnect {
+    opacity: 1;
+}
+
+.connection-chip-disconnect:hover {
+    color: #ef4444;
+    background: rgba(239,68,68,0.1);
 }
 
 nav ul { list-style: none; }

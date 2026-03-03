@@ -1,6 +1,6 @@
 import React from 'react';
 import { Bucket } from '@/types';
-import { Plus, Trash2, Search, Database, X, LogOut, Github } from 'lucide-react';
+import { Plus, Trash2, Search, Database, X, Power, Github } from 'lucide-react';
 
 interface Props {
   buckets: Bucket[];
@@ -10,9 +10,10 @@ interface Props {
   onDelete: (bucketName: string) => void;
   onClose?: () => void;
   onDisconnect?: () => void;
+  endpoint?: string;
 }
 
-const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCreate, onDelete, onClose, onDisconnect }) => {
+const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCreate, onDelete, onClose, onDisconnect, endpoint }) => {
   const [filter, setFilter] = React.useState('');
   const [isCreateBucketOpen, setIsCreateBucketOpen] = React.useState(false);
   const [newBucketName, setNewBucketName] = React.useState('');
@@ -69,6 +70,23 @@ const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCrea
             )}
         </div>
 
+        {/* Connection chip */}
+        {endpoint && onDisconnect && (
+            <div className="connection-chip group/conn">
+                <span className="connection-chip-dot" />
+                <span className="connection-chip-label">{endpoint.replace(/^https?:\/\//, '')}</span>
+                <button
+                    type="button"
+                    onClick={onDisconnect}
+                    className="connection-chip-disconnect"
+                    aria-label="Disconnect"
+                    title="Disconnect"
+                >
+                    <Power className="w-3 h-3" />
+                </button>
+            </div>
+        )}
+
         {/* Navigation */}
         <nav className="flex-1 flex flex-col min-h-0">
             <div className="mb-4 flex-1 min-h-0 flex flex-col">
@@ -120,18 +138,6 @@ const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCrea
                         </li>
                     ))}
                 </ul>
-            </div>
-
-            <div className="pt-0 border-t border-[#111]">
-                {onDisconnect && (
-                    <button
-                        type="button"
-                        onClick={onDisconnect}
-                        className="btn w-full mt-4 justify-center"
-                    >
-                        <LogOut className="w-3.5 h-3.5" /> Disconnect
-                    </button>
-                )}
             </div>
         </nav>
 

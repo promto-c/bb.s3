@@ -472,6 +472,7 @@ const App: React.FC = () => {
         onDelete={handleDeleteBucket}
         onClose={closeSidebar}
         onDisconnect={handleDisconnect}
+        endpoint={s3Config?.endpoint}
       />
 
       <main>
