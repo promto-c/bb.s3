@@ -243,6 +243,59 @@ nav li.active::before {
     font-weight: 700;
 }
 
+/* Expandable Search */
+.expandable-search-label {
+    transition: opacity 0.2s ease, max-width 0.2s ease;
+    max-width: 200px;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.expandable-search-label.collapsed {
+    opacity: 0;
+    max-width: 0;
+    pointer-events: none;
+}
+
+.expandable-search {
+    position: absolute;
+    left: 0;
+    right: 3.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 26px;
+    overflow: hidden;
+    width: 0;
+    opacity: 0;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.expandable-search.open {
+    width: calc(100% - 3.5rem);
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.expandable-search-input {
+    width: 100%;
+    height: 100%;
+    background: #0f0f0f;
+    border: 1px solid #333;
+    border-radius: 5px;
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    padding: 0 0.5rem 0 1.75rem;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.expandable-search-input:focus {
+    border-color: #444;
+    background: #111;
+}
+
 /* Main Workspace */
 main {
     flex: 1;
@@ -1571,7 +1624,10 @@ header {
     }
 
     .header-left {
-        justify-content: space-between;
+        /* keep nav controls and breadcrumbs/batch aligned to the left on mobile
+           (desktop uses default start alignment). previously space-between pushed
+           the batch bar to the right). */
+        justify-content: flex-start;
         width: 100%;
     }
 
@@ -1588,6 +1644,12 @@ header {
         justify-content: space-between;
         flex-wrap: wrap;
         gap: 0.5rem;
+    }
+
+    /* batch bar should fill available width and wrap items so it sits flush left */
+    .batch-bar {
+        flex-wrap: wrap;
+        width: 100%;
     }
 
     .action-bar .btn-primary {

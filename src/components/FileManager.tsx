@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import BreadcrumbNav from '@/components/BreadcrumbNav';
 import ContextMenu from '@/components/ContextMenu';
+import PageHeader from '@/components/PageHeader';
 
 interface Props {
   objects: S3Object[];
@@ -259,89 +260,10 @@ const FileManager: React.FC<Props> = ({
         </div>
       )}
 
-      {/* Modern Header */}
-      <header className="flex items-center justify-between px-4 py-2 border-b border-[#1f1f1f] bg-[#0a0a0a]/50 backdrop-blur-md shrink-0 z-20">
-         <div className="header-left flex items-center gap-4 flex-1 min-w-0">
-             {/* Navigation Controls */}
-             <div className="flex items-center">
-                {onToggleSidebar && (
-                    <button
-                        type="button"
-                        onClick={onToggleSidebar}
-                        className="icon-btn mobile-only"
-                        title="Buckets"
-                    >
-                        <Menu className="w-4 h-4" />
-                    </button>
-                )}
-                <button
-                    onClick={navigateUp}
-                    disabled={!currentPrefix}
-                    title="Go Back"
-                    className="w-7 h-7 flex items-center justify-center rounded-lg border transition-all disabled:opacity-20 disabled:cursor-not-allowed disabled:border-transparent border-[#222] bg-[#111] hover:bg-[#222] hover:border-[#333] text-white"
-                >
-                    <ChevronLeft className="w-4 h-4" />
-                </button>
-             </div>
-
-             <div className="nav-divider h-5 w-px bg-[#222]"></div>
-
-             {hasSelection && selectedKeys.size > 1 ? (
-               /* Batch action bar replaces breadcrumbs */
-               <div className="batch-bar">
-                 <button
-                   type="button"
-                   onClick={() => onSelectionChange(new Set())}
-                   className="icon-btn batch-bar-close"
-                   title="Clear selection"
-                 >
-                   <X className="w-3.5 h-3.5" />
-                 </button>
-                 <span className="batch-bar-count">{selectedKeys.size} selected</span>
-                 <button
-                   type="button"
-                   onClick={onBatchDownload}
-                   className="btn batch-bar-btn"
-                   title="Download selected files"
-                 >
-                   <Download className="w-3.5 h-3.5" /> Download
-                 </button>
-                 <button
-                   type="button"
-                   onClick={onBatchDelete}
-                   className="batch-bar-btn-danger"
-                   title="Delete selected items"
-                 >
-                   <Trash2 className="w-3.5 h-3.5" /> Delete
-                 </button>
-               </div>
-             ) : (
-               /* Normal breadcrumbs + item count */
-               <>
-                 <BreadcrumbNav
-                    bucketName={bucketName}
-                    currentPrefix={currentPrefix}
-                    onNavigate={onNavigate}
-                 />
-
-                 {!isLoading && objects.length > 0 && (() => {
-                    const folders = objects.filter(o => o.isFolder).length;
-                    const files = objects.filter(o => !o.isFolder).length;
-                    const parts = [];
-                    if (folders) parts.push(`${folders} folder${folders !== 1 ? 's' : ''}`);
-                    if (files) parts.push(`${files} file${files !== 1 ? 's' : ''}`);
-                    return (
-                        <span className="text-[10px] font-mono text-[#444] whitespace-nowrap shrink-0">
-                            {parts.join(', ')}
-                        </span>
-                    );
-                 })()}
-               </>
-             )}
-         </div>
-
-         {/* Actions */}
-         <div className="action-bar">
+      {/* Reusable page header */}
+      <PageHeader
+        right={
+          <>
             <div className="flex bg-[#0a0a0a] border border-[#1f1f1f] rounded-lg p-1 gap-1 mr-4">
                 <button
                     onClick={() => setViewMode('grid')}
@@ -380,8 +302,85 @@ const FileManager: React.FC<Props> = ({
             >
                 <Plus className="w-3.5 h-3.5" strokeWidth={3} /> Upload
             </button>
+          </>
+        }
+      >
+        <div className="flex items-center">
+          {onToggleSidebar && (
+              <button
+                  type="button"
+                  onClick={onToggleSidebar}
+                  className="icon-btn mobile-only"
+                  title="Buckets"
+              >
+                  <Menu className="w-4 h-4" />
+              </button>
+          )}
+          <button
+              onClick={navigateUp}
+              disabled={!currentPrefix}
+              title="Go Back"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border transition-all disabled:opacity-20 disabled:cursor-not-allowed disabled:border-transparent border-[#222] bg-[#111] hover:bg-[#222] hover:border-[#333] text-white"
+          >
+              <ChevronLeft className="w-4 h-4" />
+          </button>
         </div>
-      </header>
+
+        <div className="nav-divider h-5 w-px bg-[#222]"></div>
+
+        {hasSelection ? (
+          /* Batch action bar replaces breadcrumbs */
+          <div className="batch-bar">
+            <button
+              type="button"
+              onClick={() => onSelectionChange(new Set())}
+              className="icon-btn batch-bar-close"
+              title="Clear selection"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+            <span className="batch-bar-count">{selectedKeys.size} selected</span>
+            <button
+              type="button"
+              onClick={onBatchDownload}
+              className="btn batch-bar-btn"
+              title="Download selected files"
+            >
+              <Download className="w-3.5 h-3.5" /> Download
+            </button>
+            <button
+              type="button"
+              onClick={onBatchDelete}
+              className="batch-bar-btn-danger"
+              title="Delete selected items"
+            >
+              <Trash2 className="w-3.5 h-3.5" /> Delete
+            </button>
+          </div>
+        ) : (
+          /* Normal breadcrumbs + item count */
+          <>
+            <BreadcrumbNav
+               bucketName={bucketName}
+               currentPrefix={currentPrefix}
+               onNavigate={onNavigate}
+            />
+
+            {!isLoading && objects.length > 0 && (() => {
+               const folders = objects.filter(o => o.isFolder).length;
+               const files = objects.filter(o => !o.isFolder).length;
+               const parts = [];
+               if (folders) parts.push(`${folders} folder${folders !== 1 ? 's' : ''}`);
+               if (files) parts.push(`${files} file${files !== 1 ? 's' : ''}`);
+               return (
+                   <span className="text-[10px] font-mono text-[#444] whitespace-nowrap shrink-0">
+                       {parts.join(', ')}
+                   </span>
+               );
+            })()}
+          </>
+        )}
+      </PageHeader>
 
       {/* Content */}
       <div className={`content-area ${isLoading && objects.length === 0 ? '' : viewMode === 'grid' ? 'grid-view' : 'list-view'}`} onClick={handleContentClick}>
@@ -403,6 +402,21 @@ const FileManager: React.FC<Props> = ({
                     onTouchMove={handleTouchMove}
                     onContextMenu={(e) => {
                       e.preventDefault();
+                      if (isTouchRef.current) {
+                        // Touch long-press: trigger selection immediately
+                        // (browser contextmenu may fire before our 500ms timer)
+                        if (longPressRef.current) {
+                          clearTimeout(longPressRef.current.timer);
+                          if (!longPressRef.current.fired) {
+                            const newKeys = new Set(selectedKeys);
+                            newKeys.add(obj.key);
+                            onSelectionChange(newKeys);
+                            lastClickedIndex.current = idx;
+                          }
+                          longPressRef.current = { timer: longPressRef.current.timer, fired: true };
+                        }
+                        return;
+                      }
                       if (longPressRef.current) {
                         clearTimeout(longPressRef.current.timer);
                         longPressRef.current = null;

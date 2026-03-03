@@ -1,6 +1,7 @@
 import React from 'react';
 import { Bucket } from '@/types';
-import { Plus, Trash2, Search, Database, X, Power, Github } from 'lucide-react';
+import { Plus, Trash2, Database, X, Power, Github } from 'lucide-react';
+import ExpandableSearch from './ExpandableSearch';
 
 interface Props {
   buckets: Bucket[];
@@ -15,6 +16,7 @@ interface Props {
 
 const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCreate, onDelete, onClose, onDisconnect, endpoint }) => {
   const [filter, setFilter] = React.useState('');
+  const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const [isCreateBucketOpen, setIsCreateBucketOpen] = React.useState(false);
   const [newBucketName, setNewBucketName] = React.useState('');
   const [isCreatingBucket, setIsCreatingBucket] = React.useState(false);
@@ -90,30 +92,21 @@ const BucketList: React.FC<Props> = ({ buckets, selectedBucket, onSelect, onCrea
         {/* Navigation */}
         <nav className="flex-1 flex flex-col min-h-0">
             <div className="mb-4 flex-1 min-h-0 flex flex-col">
-                <div className="relative group w-full mb-3">
-                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#444] group-focus-within:text-[#777] transition-colors" />
-                    <input 
-                        type="text" 
-                        placeholder="Search..." 
-                        className="onyx-input"
-                        style={{ paddingLeft: '2rem', fontSize: '0.75rem' }}
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                    />
-                </div>
-                
-                <div className="flex items-center justify-between px-2 mb-2">
-                    <div className="section-label" style={{ margin: 0 }}>
+                <div className="relative flex items-center justify-between px-2 mb-2">
+                    <div className={`section-label expandable-search-label ${isSearchOpen ? 'collapsed' : ''}`} style={{ margin: 0 }}>
                         Buckets
                         <span className="ml-1.5 text-[#333] font-mono">{filteredBuckets.length}{filter && filteredBuckets.length !== buckets.length ? `/${buckets.length}` : ''}</span>
                     </div>
-                    <button 
-                        onClick={openCreateBucketDialog}
-                        className="text-[#555] hover:text-white transition-colors p-1"
-                        title="Create Bucket"
-                    >
-                        <Plus className="w-3.5 h-3.5" />
-                    </button>
+                    <div className="flex items-center gap-0.5">
+                        <ExpandableSearch value={filter} onChange={setFilter} placeholder="Search..." title="Search Buckets" onOpenChange={setIsSearchOpen} />
+                        <button
+                            onClick={openCreateBucketDialog}
+                            className="text-[#555] hover:text-white transition-colors p-1"
+                            title="Create Bucket"
+                        >
+                            <Plus className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
                 
                 <ul className="flex-1 min-h-0 overflow-y-auto no-scrollbar pr-1">
