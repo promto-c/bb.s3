@@ -21,6 +21,8 @@ const App: React.FC = () => {
 
   const [buckets, setBuckets] = useState<Bucket[]>([]);
   const [selectedBucket, setSelectedBucket] = useState<string | null>(null);
+  // track a bucket name we're currently creating so the sidebar can render a placeholder
+  const [pendingBucket, setPendingBucket] = useState<string | null>(null);
 
   const [currentObjects, setCurrentObjects] = useState<S3Object[]>([]);
   const [currentPrefix, setCurrentPrefix] = useState<string>('');
@@ -235,6 +237,9 @@ const App: React.FC = () => {
       return false;
     }
 
+    setPendingBucket(name);
+    // placeholder will show via pendingBucket prop; we do not mutate the real bucket list until the request succeeds
+
     try {
       await s3Service.createBucket(name);
       const bucketList = await s3Service.listBuckets();
@@ -248,6 +253,8 @@ const App: React.FC = () => {
       const message = e instanceof Error ? e.message : 'Unknown error';
       showNotification(`Failed to create bucket: ${message}`, 'error');
       return false;
+    } finally {
+      setPendingBucket(null);
     }
   };
 
@@ -582,6 +589,7 @@ const App: React.FC = () => {
         selectedBucket={selectedBucket}
         onSelect={handleBucketSelect}
         onCreate={handleCreateBucket}
+        pendingBucket={pendingBucket ?? undefined}
         onDelete={handleDeleteBucket}
         onClose={closeSidebar}
         onDisconnect={handleDisconnect}

@@ -275,6 +275,7 @@ nav li.active::before {
     width: calc(100% - 3.5rem);
     opacity: 1;
     pointer-events: auto;
+    overflow: visible;
 }
 
 .expandable-search-input {
@@ -293,6 +294,47 @@ nav li.active::before {
 
 .expandable-search-input:focus {
     border-color: #444;
+    background: #111;
+}
+
+/* Expandable Create Input */
+.expandable-create {
+    position: absolute;
+    left: 0;
+    right: 3.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 26px;
+    overflow: hidden;
+    width: 0;
+    opacity: 0;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
+    pointer-events: none;
+}
+
+.expandable-create.open {
+    width: calc(100% - 3.5rem);
+    opacity: 1;
+    pointer-events: auto;
+    overflow: visible;
+}
+
+.expandable-create-input {
+    width: 100%;
+    height: 100%;
+    background: #0f0f0f;
+    border: 1px solid #333;
+    border-radius: 5px;
+    color: var(--text-primary);
+    font-family: var(--sans);
+    font-size: 0.72rem;
+    padding: 0 0.5rem 0 1.75rem;
+    outline: none;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.expandable-create-input:focus {
+    border-color: #555;
     background: #111;
 }
 
